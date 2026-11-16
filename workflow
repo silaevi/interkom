@@ -37,13 +37,13 @@ jobs:
           sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Build APK
         run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: MotoIntercom-APK
           path: '**/outputs/apk/debug/*.apk'
