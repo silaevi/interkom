@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView statusText;
     private TextView pauseText;
 
-    // Аудио
+    // ГЂГіГ¤ГЁГ®
     private AudioRecord recorder;
     private AudioTrack player;
     private DatagramSocket socket;
@@ -58,20 +58,20 @@ public class MainActivity extends AppCompatActivity {
     private final int PORT = 55555;
     private final int SAMPLE_RATE = 8000;
     private volatile boolean isRunning = true;
-    private final AtomicBoolean isOnPhoneCall = new AtomicBoolean(false); // Флаг телефонного звонка
+    private final AtomicBoolean isOnPhoneCall = new AtomicBoolean(false); // Г”Г«Г ГЈ ГІГҐГ«ГҐГґГ®Г­Г­Г®ГЈГ® Г§ГўГ®Г­ГЄГ 
 
-    // Менеджер звука для ducking'а (приглушения музыки)
+    // ГЊГҐГ­ГҐГ¤Г¦ГҐГ° Г§ГўГіГЄГ  Г¤Г«Гї ducking'Г  (ГЇГ°ГЁГЈГ«ГіГёГҐГ­ГЁГї Г¬ГіГ§Г»ГЄГЁ)
     private AudioManager audioManager;
     private AudioFocusRequest audioFocusRequest;
 
-    // Слушатель состояния телефона
+    // Г‘Г«ГіГёГ ГІГҐГ«Гј Г±Г®Г±ГІГ®ГїГ­ГЁГї ГІГҐГ«ГҐГґГ®Г­Г 
     private PhoneStateListener phoneStateListener;
     private TelephonyManager telephonyManager;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (!isGranted) {
-                    Toast.makeText(this, "Доступ к микрофону обязателен", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Г„Г®Г±ГІГіГЇ ГЄ Г¬ГЁГЄГ°Г®ГґГ®Г­Гі Г®ГЎГїГ§Г ГІГҐГ«ГҐГ­", Toast.LENGTH_LONG).show();
                     finish();
                 }
             });
@@ -91,11 +91,11 @@ public class MainActivity extends AppCompatActivity {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
 
-        // Инициализация AudioManager
+        // Г€Г­ГЁГ¶ГЁГ Г«ГЁГ§Г Г¶ГЁГї AudioManager
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         setupAudioFocus();
 
-        // Инициализация слушателя звонков
+        // Г€Г­ГЁГ¶ГЁГ Г«ГЁГ§Г Г¶ГЁГї Г±Г«ГіГёГ ГІГҐГ«Гї Г§ГўГ®Г­ГЄГ®Гў
         setupPhoneListener();
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Настройка: просим систему приглушать музыку, когда мы используем микрофон
+    // ГЌГ Г±ГІГ°Г®Г©ГЄГ : ГЇГ°Г®Г±ГЁГ¬ Г±ГЁГ±ГІГҐГ¬Гі ГЇГ°ГЁГЈГ«ГіГёГ ГІГј Г¬ГіГ§Г»ГЄГі, ГЄГ®ГЈГ¤Г  Г¬Г» ГЁГ±ГЇГ®Г«ГјГ§ГіГҐГ¬ Г¬ГЁГЄГ°Г®ГґГ®Г­
     private void setupAudioFocus() {
         AudioAttributes attributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
@@ -116,23 +116,23 @@ public class MainActivity extends AppCompatActivity {
                 .setAudioAttributes(attributes)
                 .setOnAudioFocusChangeListener(focusChange -> {
                     if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_DUCK) {
-                        // Музыка стала тише (это и есть ducking)
+                        // ГЊГіГ§Г»ГЄГ  Г±ГІГ Г«Г  ГІГЁГёГҐ (ГЅГІГ® ГЁ ГҐГ±ГІГј ducking)
                     }
                 })
                 .build();
     }
 
-    // Слушаем сотовую сеть
+    // Г‘Г«ГіГёГ ГҐГ¬ Г±Г®ГІГ®ГўГіГѕ Г±ГҐГІГј
     private void setupPhoneListener() {
         telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         phoneStateListener = new PhoneStateListener() {
             @Override
             public void onCallStateChanged(int state, String incomingNumber) {
                 if (state == TelephonyManager.CALL_STATE_RINGING || state == TelephonyManager.CALL_STATE_OFFHOOK) {
-                    // ВХОДЯЩИЙ ЗВОНОК или РАЗГОВОР
+                    // Г‚Г•ГЋГ„ГџГ™Г€Г‰ Г‡Г‚ГЋГЌГЋГЉ ГЁГ«ГЁ ГђГЂГ‡ГѓГЋГ‚ГЋГђ
                     pauseIntercom();
                 } else if (state == TelephonyManager.CALL_STATE_IDLE) {
-                    // ТЕЛЕФОН СВОБОДЕН
+                    // Г’Г…Г‹Г…Г”ГЋГЌ Г‘Г‚ГЋГЃГЋГ„Г…ГЌ
                     resumeIntercom();
                 }
             }
@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startService() {
-        statusText.setText("Запуск Wi-Fi Direct...");
+        statusText.setText("Г‡Г ГЇГіГ±ГЄ Wi-Fi Direct...");
         registerReceiver(receiver, intentFilter);
         manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
             @Override public void onSuccess() {}
@@ -154,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
         receiver = new WiFiDirectBroadcastReceiver(manager, channel, this);
         registerReceiver(receiver, intentFilter);
         
-        // Начинаем слушать звонки
+        // ГЌГ Г·ГЁГ­Г ГҐГ¬ Г±Г«ГіГёГ ГІГј Г§ГўГ®Г­ГЄГЁ
         telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
     }
 
@@ -166,11 +166,11 @@ public class MainActivity extends AppCompatActivity {
         abandonAudioFocus();
     }
 
-    // --- Логика ПАУЗЫ ---
+    // --- Г‹Г®ГЈГЁГЄГ  ГЏГЂГ“Г‡Г› ---
     private void pauseIntercom() {
         isOnPhoneCall.set(true);
         runOnUiThread(() -> {
-            statusText.setText("НА ПАУЗЕ");
+            statusText.setText("ГЌГЂ ГЏГЂГ“Г‡Г…");
             pauseText.setVisibility(android.view.View.VISIBLE);
         });
         stopAudioThreads();
@@ -180,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
     private void resumeIntercom() {
         if (isOnPhoneCall.compareAndSet(true, false)) {
             runOnUiThread(() -> {
-                statusText.setText("Интерком активен");
+                statusText.setText("Г€Г­ГІГҐГ°ГЄГ®Г¬ Г ГЄГІГЁГўГҐГ­");
                 pauseText.setVisibility(android.view.View.GONE);
             });
             requestAudioFocus();
@@ -191,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // --- Логика Ducking'а (приглушения музыки) ---
+    // --- Г‹Г®ГЈГЁГЄГ  Ducking'Г  (ГЇГ°ГЁГЈГ«ГіГёГҐГ­ГЁГї Г¬ГіГ§Г»ГЄГЁ) ---
     private void requestAudioFocus() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             audioManager.requestAudioFocus(audioFocusRequest);
@@ -208,22 +208,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // --- Остальной код (без изменений, но с вызовом focus) ---
-    public void updatePeers(List<WifiP2pDevice> peers) { /* ... без изменений ... */ }
+    // --- ГЋГ±ГІГ Г«ГјГ­Г®Г© ГЄГ®Г¤ (ГЎГҐГ§ ГЁГ§Г¬ГҐГ­ГҐГ­ГЁГ©, Г­Г® Г± ГўГ»Г§Г®ГўГ®Г¬ focus) ---
+    public void updatePeers(List<WifiP2pDevice> peers) { /* ... ГЎГҐГ§ ГЁГ§Г¬ГҐГ­ГҐГ­ГЁГ© ... */ }
     public void onConnectionEstablished(InetAddress address) { 
         this.targetAddress = address; 
-        statusText.setText("Интерком активен");
-        requestAudioFocus(); // Запрашиваем фокус при подключении
+        statusText.setText("Г€Г­ГІГҐГ°ГЄГ®Г¬ Г ГЄГІГЁГўГҐГ­");
+        requestAudioFocus(); // Г‡Г ГЇГ°Г ГёГЁГўГ ГҐГ¬ ГґГ®ГЄГіГ± ГЇГ°ГЁ ГЇГ®Г¤ГЄГ«ГѕГ·ГҐГ­ГЁГЁ
         initAudio();
         startFullDuplex();
     }
 
-    private void initAudio() { /* ... без изменений ... */ }
+    private void initAudio() { /* ... ГЎГҐГ§ ГЁГ§Г¬ГҐГ­ГҐГ­ГЁГ© ... */ }
 
     private void startFullDuplex() {
         executor = Executors.newFixedThreadPool(2);
         
-        // Поток ОТПРАВКИ
+        // ГЏГ®ГІГ®ГЄ ГЋГ’ГЏГђГЂГ‚ГЉГ€
         executor.execute(() -> {
             recorder.startRecording();
             byte[] buffer = new byte[1024];
@@ -239,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
             recorder.stop();
         });
 
-        // Поток ПРИЕМА
+        // ГЏГ®ГІГ®ГЄ ГЏГђГ€Г…ГЊГЂ
         executor.execute(() -> {
             byte[] buffer = new byte[1024];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
@@ -254,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopAudioThreads() {
         isRunning = false;
-        try { Thread.sleep(100); } catch (InterruptedException ignored) {} // Даем потокам упасть
+        try { Thread.sleep(100); } catch (InterruptedException ignored) {} // Г„Г ГҐГ¬ ГЇГ®ГІГ®ГЄГ Г¬ ГіГЇГ Г±ГІГј
         isRunning = true;
     }
 
