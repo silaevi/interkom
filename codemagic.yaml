@@ -1,5 +1,23 @@
 workflows:
-  sample-workflow:
-    name: Codemagic Sample Workflow
+  android-workflow:
+    name: Android Client Release
     max_build_duration: 120
     instance_type: mac_mini_m2
+    environment:
+      flutter: 3.13.7
+      java: 17
+    groups:
+      - sandbox
+    scripts:
+      - name: Install dependencies
+        script: flutter pub get
+      - name: Build APK
+        script: flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+    publishing:
+      firebase:
+        firebase_token: $FIREBASE_TOKEN
+      android:
+        app_id: $ANDROID_APP_ID
+        distribution: true
