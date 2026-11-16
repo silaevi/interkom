@@ -30,7 +30,7 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
         if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
             if (state != WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
-                activity.statusText.setText("Wi-Fi Direct выключен");
+                activity.statusText.setText("Wi-Fi Direct ГўГ»ГЄГ«ГѕГ·ГҐГ­");
             }
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             if (manager != null) {
@@ -42,11 +42,11 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
                 manager.requestConnectionInfo(channel, info -> {
                     WifiP2pDevice device = info.groupOwnerInfo;
                     if (info.groupFormed && !device.isGroupOwner) {
-                        // Мы клиент, подключаемся к серверу
+                        // ГЊГ» ГЄГ«ГЁГҐГ­ГІ, ГЇГ®Г¤ГЄГ«ГѕГ·Г ГҐГ¬Г±Гї ГЄ Г±ГҐГ°ГўГҐГ°Гі
                         activity.onConnectionEstablished(info.groupOwnerAddress);
                     } else if (info.groupFormed && device.isGroupOwner) {
-                        // Мы сервер, просто ждем входящих данных
-                        activity.statusText.setText("Режим: Сервер\nОжидание клиента...");
+                        // ГЊГ» Г±ГҐГ°ГўГҐГ°, ГЇГ°Г®Г±ГІГ® Г¦Г¤ГҐГ¬ ГўГµГ®Г¤ГїГ№ГЁГµ Г¤Г Г­Г­Г»Гµ
+                        activity.statusText.setText("ГђГҐГ¦ГЁГ¬: Г‘ГҐГ°ГўГҐГ°\nГЋГ¦ГЁГ¤Г Г­ГЁГҐ ГЄГ«ГЁГҐГ­ГІГ ...");
                     }
                 });
             }
