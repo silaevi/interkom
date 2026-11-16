@@ -10,17 +10,14 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      # ОБНОВЛЕНО: с v4 до v5
-      - name: Checkout project
-        uses: actions/checkout@v5
+     - name: Checkout project
+  uses: actions/checkout@v5
 
-      # ОБНОВЛЕНО: с v4 до v5
-      - name: Setup Java 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle
+- name: Setup Java 17
+  uses: actions/setup-java@v5
+  with:
+    distribution: temurin
+    java-version: '17'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
