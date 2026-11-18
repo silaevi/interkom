@@ -1517,13 +1517,21 @@ jobs:
       - name: Show errors in log
         if: failure()
         run: |
-          {
-            echo "## Причина падения сборки"
-            echo '```'
-            tail -n 60 build.log 2>/dev/null || echo "build.log не найден — упал шаг до сборки"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-          tail -n 20 build.log 2>/dev/null || true
+          if [ -f build.log ]; then
+            hits=$(grep -n -m 15 -E "error:|FAILURE|Caused by|Exception" build.log || true)
+            if [ -n "$hits" ]; then
+              while IFS= read -r line; do
+                echo "::error::${line:0:400}"
+              done <<< "$hits"
+            else
+              echo "::error::Ошибок по маске не найдено — см. артефакт build-log"
+            fi
+            tail -n 20 build.log | while IFS= read -r line; do
+              echo "::error::ЛОГ: ${line:0:400}"
+            done
+          else
+            echo "::error::build.log не найден — упал шаг до сборки (Write sources или Create project files)"
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
