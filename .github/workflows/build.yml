@@ -9,16 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
 
       - name: Write sources
         env:
@@ -1410,34 +1412,35 @@ jobs:
                     } catch (e: Exception) {}
                     abandonFocus()
                 }
-              MF_SRC: |
+            }
+          MF_SRC: |
 
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-                    <uses-permission android:name="android.permission.INTERNET" />
-                    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-                    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-                    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-                    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
-                    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-                    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
-                        android:usesPermissionFlags="neverForLocation" />
-                    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-                    <application
-                        android:allowBackup="true"
-                        android:icon="@mipmap/ic_launcher"
-                        android:label="Интерком">
-                        <activity
-                            android:name=".MainActivity"
-                            android:exported="true">
-                            <intent-filter>
-                                <action android:name="android.intent.action.MAIN" />
-                                <category android:name="android.intent.category.LAUNCHER" />
-                            </intent-filter>
-                        </activity>
-                    </application>
-                </manifest>
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <uses-permission android:name="android.permission.RECORD_AUDIO" />
+                <uses-permission android:name="android.permission.INTERNET" />
+                <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+                <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+                <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+                <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+                <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+                <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+                    android:usesPermissionFlags="neverForLocation" />
+                <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+                <application
+                    android:allowBackup="true"
+                    android:icon="@mipmap/ic_launcher"
+                    android:label="Интерком">
+                    <activity
+                        android:name=".MainActivity"
+                        android:exported="true">
+                        <intent-filter>
+                            <action android:name="android.intent.action.MAIN" />
+                            <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
           ICON_B64: |
             iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAC+UlEQVR42u3aXW7iQBCF0XSLPRCFZcIyYJlBsAryHgkigm2qfc95nT/Gqa+rPZmPDwAAAAAAYK3aKB/0a3+5+XKN5Xz6bAIw8BQOohl6kmNohp7kGJrBJzmEZvBJDqEbfqpZck6awSd5G3TDT/I26Iaf5AiawSf5StQNP8nboBt+kiPohp/kCLpHSbJeqUZYeu664Sc5gm74SY7AOwDeAZz+pG6BbvhJjsAVCFcgpz+pW8AGwAZw+pO6BWwAbAAQgOsPgdcgGwAbAATg+kPgNcgGwAYAAYAA3P/Jeg+wAbABQAAgABAAxNh4BMv7Pm7v/tjucPWABJA19Pd+nhgEEDP4j36tELwDxA3/HL8PNsBQg28b2ACG3zYQAAjA6W8LCMDwi0AAIIDk098WEAAIAAQQev1xDRIACAAEAAIAAYAAQAAgABAACAAEAAIAAYAAQAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEMBq7A7X6D9fACAAEIBrkOuPAEAAtoDTXwAiMPwCAAHYAk7/qjYewXxD+n3cGnwbQAiG3wawDf6xDQy+AFa5DR7FYOgF4GqEdwAQAAgABAACAAGAAEAA8DLfCHvClP+5bW6+2SaAyMH//ZmF4AoEAkg6/df0+QUAAgABvMXoL5FeggUAd/ln0CdOUd8HEIAQcAUCAYAAQAAgABAACAAEAAIAAYAAQAAgABAACAAEAAIAAYAAoFgA59Nn85gY1V/zawNgA4AAQADeA8i5/9sA2AAeAQJwDSLw+mMDYAN4BAjANYjA648NgA0wZ11Q+fS3AbABlqgMKp7+L20AETD68LsC4Qr0juqgwuk/yQYQAaMO/2RXIBEw4vB7B8A7QKUaYel56xU/FCw1Z73yh4O552vWYf3aX26+ZFQ+WPuIHxrDP0QAIqD6/Cw6nK5EVDs4+xr/Uhj+khvANqDaAfn2E1kIvPNmUOpKIgZDHx2AGAy9AARh4AEAAAAAmMoPDG0Ua/TEeq0AAAAASUVORK5CYII=
         run: |
