@@ -1517,8 +1517,13 @@ jobs:
       - name: Show errors in log
         if: failure()
         run: |
-          echo "=== ПОСЛЕДНИЕ 60 СТРОК ЛОГА СБОРКИ ==="
-          tail -n 60 build.log
+          {
+            echo "## Причина падения сборки"
+            echo '```'
+            tail -n 60 build.log 2>/dev/null || echo "build.log не найден — упал шаг до сборки"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          tail -n 20 build.log 2>/dev/null || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
