@@ -54,7 +54,7 @@ jobs:
             WgZQVGc9CksbZd3aV11f3ta40qaT2qOboqq0B1N7JiLUGAudQ6IyA0O0MlhE2nA69j1adkbFTPp+bUUnXsh92hfECKeBxOVFzAgu
             mj4H1/LV7CcAsxCjnYKlQKbhioqgFlqTUwZe5xSWWqe4jsQlZYVBKaAGC/Nk+hhRHawyn4JF+gLB2iulbKyvSA18exfjoRyJ8mmf
             L/9LhS6YmCbslLOQBzoqELWsUEqMzYwl1avM7goI2gg6WhsOcdMiyGD4Xc9nBmlLhXET4LiSzunExPfu8B28eNvGCPedIIlheL5j
-            uzwBKENo3mi1m3/X2urWNhTsplgP7rNAqWijJV21cm4RCCOGQgni48VgvXPXSEPXMjuvLL6YMSkx9n5qkX/6QYkvpEolncjjGCib
+            uzBKENo3mi1m3/X2urWNhTsplgP7rNAqWijJV21cm4RCCOGQgni48VgvXPXSEPXMjuvLL6YMSkx9n5qkX/6QYkvpEolncjjGCib
             yMC6pRD3FVYtM3pjrm7U6u/yivgD2gRQC/GQeLht+dYoyDJ2Q3pnaMdZrehLme+1a9uwCN/qNra6Fba8u4jP5sEEnGa+77f4dM1h
             9/S/OacRU0SMnv484j89nc/2uRzdsfq393zUma7jhhs8vyCbOgaGgieF0ZYWEpkw7Ind2tUzWjXh1bvr6xffrr31+htm6FH+BR8X
             Pl9fry9X34qev6zpX3DuX7D8InIDMoPRjpZbHzr92wVYeL5mJm+48htp/y7/8MBHemuOk79TjBYUIyBhsw7s96LKDI3nUeOLYvaA
@@ -116,10 +116,16 @@ jobs:
             UwdjD7m27Y58w7YsZByFh9M0ogEWpey7sD8ND0dR8jjAwSpPVSCynIAzSYQfSKSC4qX42D0Xr7un4q34LN7rT1J1CARdU7E9VI7f
             V5blCaZMr3XgVyHZpEkmSFgb0U5ECmWCMNGd00iQ7PTu4OFiUNVjudLIE920DvGcQMqUyCLJtn9jGpU81j3LGCHnDKbAC3YV2GRV
             DwceTadcXthsr9b5AtGA+8nwAwAA
+          ICON_GZ: |
+            H4sIAA9uhmQC/6WTTQ7CIBCF756CzJ7L7LkMIMToWpXQiPXRw4og2Z3a7saDXYeA1dnFf/49wnn5P5a3IrL3gMCjghyBk2sbfItA
+            SOQTEHMTI2AArJ7I1oB3pbnClQHtcKTeLCByRslBAo/WD/FgZSlxd1OBdwDJyLrIQrmNzCYkC1gkhg6UC3Bdmtt5EOzFPvNIB1ZG
+            6DS2a6yRlChS1eAmBd0CItSLtRTmTCoPV6aBR86CpmHY5zBUtxBZnbUz3XSVPcQNZG8SAAB//9xdnQ1bO/NCAAA//9dHVyWDgEA
+            AAA=
         run: |
-          mkdir -p app/src/main/java/com/example/intercom
+          mkdir -p app/src/main/java/com/example/intercom app/src/main/res/mipmap-xxxhdpi
           echo "$KT_GZ" | tr -d ' \n' | base64 -d | gunzip > app/src/main/java/com/example/intercom/MainActivity.kt
           echo "$MF_GZ" | tr -d ' \n' | base64 -d | gunzip > app/src/main/AndroidManifest.xml
+          echo "$ICON_GZ" | tr -d ' \n' | base64 -d | gunzip > app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           echo "::notice::Kotlin lines: $(wc -l < app/src/main/java/com/example/intercom/MainActivity.kt)"
           echo "::notice::Kotlin bytes: $(wc -c < app/src/main/java/com/example/intercom/MainActivity.kt)"
 
