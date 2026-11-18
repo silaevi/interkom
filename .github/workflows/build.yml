@@ -1,17 +1,4 @@
 name: Build APK
-      - name: Diagnostics on failure
-        if: failure()
-        run: |
-          {
-            echo "### Сборка упала: последние 60 строк лога"
-            echo '```'
-            tail -n 60 build.log 2>/dev/null || echo "build.log не найден — упал шаг до сборки (Write sources или Create project files)"
-            echo '```'
-            if [ ! -f app/src/main/java/com/example/intercom/MainActivity.kt ]; then
-              echo "ВНИМАНИЕ: MainActivity.kt не создан — вставка файла workflow оборвалась"
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
-          tail -n 40 build.log 2>/dev/null || true
 
 "on":
   - push
