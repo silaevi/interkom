@@ -15,14 +15,10 @@ jobs:
         run: |
           FILE=app/src/main/java/com/example/intercom/MainActivity.kt
           echo "::notice::Total lines: $(wc -l < "$FILE")"
-          echo "::notice::Top-level closing braces (should be only the last line):"
-          grep -n '^}' "$FILE" | while IFS= read -r line; do
-            echo "::notice::TOPBRACE: ${line:0:150}"
+          grep -n "fun " "$FILE" | while IFS= read -r line; do
+            echo "::notice::FUN: ${line:0:120}"
           done
-          echo "::notice::Fragment 380-430:"
-          sed -n '380,430p' "$FILE" | while IFS= read -r line; do
-            echo "::notice::L: ${line:0:150}"
-          done
+          awk 'NR>=350 && NR<=402 {printf "::notice::%d| %s\n", NR, substr($0,1,120)}' "$FILE"
 
       - name: Write manifest
         run: |
