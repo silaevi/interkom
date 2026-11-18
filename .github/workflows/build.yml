@@ -1,4 +1,3 @@
-
 name: Build APK
 
 "on":
@@ -925,3 +924,609 @@ jobs:
                             "Музыка на паузе (идёт разговор)", true)
                     }
                 }
+
+                private fun abandonFocus() {
+                    focusRequest?.let {
+                        audioManager.abandonAudioFocusRequest(it)
+                    }
+                    focusRequest = null
+                    focusHeld = false
+                    speechFrames = 0
+                }
+
+                // ================= Оформление =================
+
+                private fun applyBackground(view: View) {
+                    if (view is CheckBox) {
+                        view.setTextColor(
+                            if (themeMode == 0) Color.BLACK
+                            else Color.WHITE)
+                    } else if (view is Button) {
+                        // Цвет кнопок не зависит от темы
+                    } else {
+                        view.setBackgroundColor(
+                            if (themeMode == 0) 0xFFF8F9FA.toInt()
+                            else 0xFF1E1E1E.toInt())
+                        if (view is TextView) {
+                            view.setTextColor(
+                                if (themeMode == 0) Color.BLACK
+                                else Color.WHITE)
+                        }
+                    }
+                    if (view is ViewGroup) {
+                        for (i in 0 until view.childCount) {
+                            applyBackground(view.getChildAt(i))
+                        }
+                    }
+                }
+
+                private fun boldLabel(text: String): TextView =
+                    TextView(this).apply {
+                        this.text = text
+                        setTypeface(Typeface.DEFAULT_BOLD)
+                        textSize = 17f
+                    }
+
+                private fun styledButton(
+                    text: String, color: Int
+                ): Button = Button(this).apply {
+                    this.text = text
+                    textSize = 17f
+                    setTypeface(Typeface.DEFAULT_BOLD)
+                    setTextColor(Color.WHITE)
+                    isAllCaps = false
+                    backgroundTintList =
+                        android.content.res.ColorStateList
+                            .valueOf(color)
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT)
+                }
+
+                // ================= Интерфейс =================
+
+                private fun buildUi() {
+                    val d = resources.displayMetrics.density
+                    val pad = (16 * d).toInt()
+
+                    statusView = TextView(this)
+                    devicesView = TextView(this)
+                    foundListLayout = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                    }
+
+                    micButton = styledButton(
+                        "Микрофон: ВКЛ",
+                        0xFF1A73E8.toInt()).apply {
+                        setOnClickListener {
+                            micEnabled = !micEnabled
+                            if (micEnabled) {
+                                text = "Микрофон: ВКЛ"
+                                backgroundTintList =
+                                    android.content.res
+                                        .ColorStateList.valueOf(
+                                            0xFF1A73E8.toInt())
+                            } else {
+                                text = "Микрофон: ВЫКЛ"
+                                backgroundTintList =
+                                    android.content.res
+                                        .ColorStateList.valueOf(
+                                            0xFF607D8B.toInt())
+                            }
+                            if (!micEnabled && focusHeld) {
+                                abandonFocus()
+                            }
+                        }
+                    }
+
+                    val testButton = styledButton(
+                        "Проверка связи (эхо 3 сек)",
+                        0xFF28A745.toInt()).apply {
+                        setOnClickListener {
+                            if (!running) return@setOnClickListener
+                            val minBuf =
+                                AudioTrack.getMinBufferSize(
+                                    SAMPLE_RATE,
+                                    AudioFormat.CHANNEL_OUT_MONO,
+                                    AudioFormat
+                                        .ENCODING_PCM_16BIT)
+                            val track = AudioTrack(
+                                AudioAttributes.Builder()
+                                    .setUsage(
+                                        AudioAttributes
+                                            .USAGE_MEDIA)
+                                    .setContentType(
+                                        AudioAttributes
+                                            .CONTENT_TYPE_SPEECH)
+                                    .build(),
+                                pcmOutFormat(),
+                                maxOf(minBuf, SAMPLE_RATE * 2),
+                                AudioTrack.MODE_STREAM, 0)
+                            track.setVolume(talkVolume / 100f)
+                            echoTrack = track
+                            thread {
+                                track.play()
+                                Thread.sleep(3000)
+                                track.stop()
+                                track.release()
+                                echoTrack = null
+                            }
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Говорите, услышите себя 3 секунды",
+                                Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    val settingsButton = styledButton(
+                        "Настройки",
+                        0xFF7B1FA2.toInt()).apply {
+                        setOnClickListener {
+                            mainScreen.visibility = View.GONE
+                            settingsScreen.visibility = View.VISIBLE
+                        }
+                    }
+
+                    val searchButton = styledButton(
+                        "Найти устройства",
+                        0xFF0288D1.toInt()).apply {
+                        setOnClickListener { manualSearch() }
+                    }
+
+                    talkVolumeBar = SeekBar(this).apply {
+                        max = 100
+                        progress = talkVolume
+                        setOnSeekBarChangeListener(
+                            object :
+                                SeekBar.OnSeekBarChangeListener {
+                                override fun onProgressChanged(
+                                    s: SeekBar?, vol: Int,
+                                    fromUser: Boolean
+                                ) {
+                                    if (fromUser) {
+                                        talkVolume = vol
+                                        recvTrack?.setVolume(
+                                            vol / 100f)
+                                        echoTrack?.setVolume(
+                                            vol / 100f)
+                                        getSharedPreferences(
+                                            PREFS,
+                                            Context.MODE_PRIVATE)
+                                            .edit()
+                                            .putInt(
+                                                KEY_TALK_VOL, vol)
+                                            .apply()
+                                    }
+                                }
+                                override fun onStartTrackingTouch(
+                                    s: SeekBar?
+                                ) {}
+                                override fun onStopTrackingTouch(
+                                    s: SeekBar?
+                                ) {}
+                            })
+                    }
+
+                    val header = LinearLayout(this).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = Gravity.CENTER
+                    }
+                    header.addView(ImageView(this).apply {
+                        setImageResource(R.mipmap.ic_launcher)
+                        layoutParams = LinearLayout.LayoutParams(
+                            (64 * d).toInt(), (64 * d).toInt())
+                    })
+                    header.addView(TextView(this).apply {
+                        text = "Интерком"
+                        textSize = 28f
+                        setTypeface(Typeface.DEFAULT_BOLD)
+                        setPadding((12 * d).toInt(), 0, 0, 0)
+                    })
+
+                    mainScreen = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPadding(pad, pad, pad, pad)
+                        addView(header)
+                        addView(TextView(this@MainActivity).apply {
+                            text =
+                                "Говорите без кнопок. Соединение через Wi-Fi Direct без роутера."
+                            textSize = 16f
+                        })
+                        addView(boldLabel(
+                            "Громкость разговора:")
+                            .apply { setPadding(0, pad, 0, 0) })
+                        addView(talkVolumeBar)
+                        addView(micButton)
+                        addView(testButton)
+                        addView(searchButton)
+                        addView(settingsButton)
+                        addView(statusView)
+                        addView(boldLabel("Найденные устройства:")
+                            .apply {
+                                setPadding(0, pad, 0, pad / 2)
+                            })
+                        addView(foundListLayout)
+                        addView(boldLabel("Активные соединения:")
+                            .apply {
+                                setPadding(0, pad, 0, pad / 2)
+                            })
+                        addView(devicesView)
+                    }
+
+                    // ---------- ЭКРАН НАСТРОЕК ----------
+
+                    musicFirstCheck = CheckBox(this).apply {
+                        text =
+                            "Музыка всегда на первом месте (не ставить на паузу)"
+                        isChecked = musicFirst
+                        setOnCheckedChangeListener { _, checked ->
+                            musicFirst = checked
+                            getSharedPreferences(
+                                PREFS, Context.MODE_PRIVATE)
+                                .edit()
+                                .putBoolean(KEY_MUSIC_FIRST, checked)
+                                .apply()
+                            if (checked) abandonFocus()
+                        }
+                    }
+
+                    delaySpinner = Spinner(this).apply {
+                        adapter = ArrayAdapter(
+                            this@MainActivity,
+                            android.R.layout
+                                .simple_spinner_dropdown_item,
+                            arrayOf(
+                                "Пауза музыки: 0 сек",
+                                "Пауза музыки: 1 сек",
+                                "Пауза музыки: 2 сек",
+                                "Пауза музыки: 3 сек",
+                                "Пауза музыки: 4 сек",
+                                "Пауза музыки: 5 сек"))
+                        setSelection(musicDelaySec)
+                    }
+                    delaySpinner!!.onItemSelectedListener =
+                        object : AdapterView.OnItemSelectedListener {
+                            override fun onItemSelected(
+                                p: AdapterView<*>?, v: View?,
+                                pos: Int, id: Long
+                            ) {
+                                musicDelaySec = pos
+                                getSharedPreferences(
+                                    PREFS, Context.MODE_PRIVATE)
+                                    .edit()
+                                    .putInt(KEY_DELAY, pos)
+                                    .apply()
+                            }
+                            override fun onNothingSelected(
+                                p: AdapterView<*>?
+                            ) {}
+                        }
+
+                    voiceGainBar = SeekBar(this).apply {
+                        max = 200
+                        progress = (voiceGain * 100).toInt()
+                    }
+                    voiceGainLabel = boldLabel(
+                        "Громкость голоса: " +
+                            "${(voiceGain * 100).toInt()}%")
+                    voiceGainBar!!.setOnSeekBarChangeListener(
+                        object : SeekBar.OnSeekBarChangeListener {
+                            override fun onProgressChanged(
+                                s: SeekBar?, prog: Int,
+                                fromUser: Boolean
+                            ) {
+                                if (fromUser) {
+                                    val g = if (prog < 10) 10
+                                    else prog
+                                    voiceGain = g / 100f
+                                    voiceGainLabel?.text =
+                                        "Громкость голоса: $g%"
+                                    getSharedPreferences(
+                                        PREFS,
+                                        Context.MODE_PRIVATE)
+                                        .edit()
+                                        .putInt(KEY_VOICE_GAIN, g)
+                                        .apply()
+                                }
+                            }
+                            override fun onStartTrackingTouch(
+                                s: SeekBar?
+                            ) {}
+                            override fun onStopTrackingTouch(
+                                s: SeekBar?
+                            ) {}
+                        })
+
+                    musicVolumeBar = SeekBar(this).apply {
+                        max = audioManager.getStreamMaxVolume(
+                            AudioManager.STREAM_MUSIC)
+                        progress = audioManager.getStreamVolume(
+                            AudioManager.STREAM_MUSIC)
+                        setOnSeekBarChangeListener(
+                            object :
+                                SeekBar.OnSeekBarChangeListener {
+                                override fun onProgressChanged(
+                                    s: SeekBar?, vol: Int,
+                                    fromUser: Boolean
+                                ) {
+                                    if (fromUser) {
+                                        audioManager.setStreamVolume(
+                                            AudioManager
+                                                .STREAM_MUSIC,
+                                            vol, 0)
+                                    }
+                                }
+                                override fun onStartTrackingTouch(
+                                    s: SeekBar?
+                                ) {}
+                                override fun onStopTrackingTouch(
+                                    s: SeekBar?
+                                ) {}
+                            })
+                    }
+
+                    relayCheck = CheckBox(this).apply {
+                        text =
+                            "Ретрансляция звука: звук передаётся и через промежуточные устройства"
+                        isChecked = relayEnabled
+                        setOnCheckedChangeListener { _, checked ->
+                            relayEnabled = checked
+                            getSharedPreferences(
+                                PREFS, Context.MODE_PRIVATE)
+                                .edit()
+                                .putBoolean(KEY_RELAY, checked)
+                                .apply()
+                        }
+                    }
+
+                    themeSpinner = Spinner(this).apply {
+                        adapter = ArrayAdapter(
+                            this@MainActivity,
+                            android.R.layout
+                                .simple_spinner_dropdown_item,
+                            arrayOf(
+                                "Оформление: светлое",
+                                "Оформление: тёмное"))
+                        setSelection(themeMode)
+                    }
+                    themeSpinner!!.onItemSelectedListener =
+                        object : AdapterView.OnItemSelectedListener {
+                            override fun onItemSelected(
+                                p: AdapterView<*>?, v: View?,
+                                pos: Int, id: Long
+                            ) {
+                                if (pos != themeMode) {
+                                    themeMode = pos
+                                    getSharedPreferences(
+                                        PREFS,
+                                        Context.MODE_PRIVATE)
+                                        .edit()
+                                        .putInt(KEY_THEME, pos)
+                                        .apply()
+                                    recreate()
+                                }
+                            }
+                            override fun onNothingSelected(
+                                p: AdapterView<*>?
+                            ) {}
+                        }
+
+                    val backButton = styledButton(
+                        "Назад",
+                        0xFF546E7A.toInt()).apply {
+                        setOnClickListener {
+                            settingsScreen.visibility = View.GONE
+                            mainScreen.visibility = View.VISIBLE
+                        }
+                    }
+
+                    settingsScreen = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPadding(pad, pad, pad, pad)
+                        visibility = View.GONE
+                        addView(TextView(this@MainActivity).apply {
+                            text = "Настройки"
+                            textSize = 24f
+                            setTypeface(Typeface.DEFAULT_BOLD)
+                        })
+                        addView(musicFirstCheck)
+                        addView(boldLabel(
+                            "Пауза музыки после разговора:")
+                            .apply { setPadding(0, pad, 0, 0) })
+                        addView(delaySpinner)
+                        addView(boldLabel(
+                            "Громкость голоса (насколько громко вас слышат):")
+                            .apply { setPadding(0, pad, 0, 0) })
+                        addView(voiceGainLabel)
+                        addView(voiceGainBar)
+                        addView(boldLabel("Громкость музыки:")
+                            .apply { setPadding(0, pad, 0, 0) })
+                        addView(musicVolumeBar)
+                        addView(relayCheck)
+                        addView(themeSpinner)
+                        addView(TextView(this@MainActivity).apply {
+                            text =
+                                "Все настройки сохраняются автоматически."
+                            setPadding(0, pad, 0, 0)
+                        })
+                        addView(backButton)
+                    }
+
+                    val root = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(mainScreen)
+                        addView(settingsScreen)
+                    }
+                    applyBackground(root)
+                    setContentView(
+                        ScrollView(this).apply { addView(root) })
+                }
+
+                private fun setStatus(
+                    text: String, ok: Boolean
+                ) {
+                    runOnUiThread {
+                        statusView.text = "Статус: $text"
+                        statusView.setTextColor(
+                            if (ok) 0xFF28A745.toInt()
+                            else 0xFFDC3545.toInt())
+                    }
+                }
+
+                override fun onBackPressed() {
+                    if (settingsScreen.visibility ==
+                        View.VISIBLE
+                    ) {
+                        settingsScreen.visibility = View.GONE
+                        mainScreen.visibility = View.VISIBLE
+                    } else {
+                        super.onBackPressed()
+                    }
+                }
+
+                override fun onDestroy() {
+                    super.onDestroy()
+                    running = false
+                    try {
+                        unregisterReceiver(p2pReceiver)
+                    } catch (e: Exception) {}
+                    if (scoActive &&
+                        Build.VERSION.SDK_INT <
+                        Build.VERSION_CODES.S
+                    ) {
+                        try {
+                            audioManager.isBluetoothScoOn = false
+                            audioManager.stopBluetoothSco()
+                        } catch (e: Exception) {}
+                    }
+                    try {
+                        socket?.close()
+                    } catch (e: Exception) {}
+                    try {
+                        recvTrack?.stop()
+                        recvTrack?.release()
+                    } catch (e: Exception) {}
+                    try {
+                        echoTrack?.stop()
+                        echoTrack?.release()
+                    } catch (e: Exception) {}
+                    abandonFocus()
+                }
+            }
+          MF_SRC: |
+
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <uses-permission android:name="android.permission.RECORD_AUDIO" />
+                <uses-permission android:name="android.permission.INTERNET" />
+                <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+                <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+                <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+                <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+                <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+                <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+                    android:usesPermissionFlags="neverForLocation" />
+                <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+                <application
+                    android:allowBackup="true"
+                    android:icon="@mipmap/ic_launcher"
+                    android:label="Интерком">
+                    <activity
+                        android:name=".MainActivity"
+                        android:exported="true">
+                        <intent-filter>
+                            <action android:name="android.intent.action.MAIN" />
+                            <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+          ICON_B64: |
+            iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAC+UlEQVR42u3aXW7iQBCF0XSLPRCFZcIyYJlBsAryHgkigm2qfc95nT/Gqa+rPZmPDwAAAAAAYK3aKB/0a3+5+XKN5Xz6bAIw8BQOohl6kmNohp7kGJrBJzmEZvBJDqEbfqpZck6awSd5G3TDT/I26Iaf5AiawSf5StQNP8nboBt+kiPohp/kCLpHSbJeqUZYeu664Sc5gm74SY7AOwDeAZz+pG6BbvhJjsAVCFcgpz+pW8AGwAZw+pO6BWwAbAAQgOsPgdcgGwAbAATg+kPgNcgGwAYAAYAA3P/Jeg+wAbABQAAgABAAxNh4BMv7Pm7v/tjucPWABJA19Pd+nhgEEDP4j36tELwDxA3/HL8PNsBQg28b2ACG3zYQAAjA6W8LCMDwi0AAIIDk098WEAAIAAQQev1xDRIACAAEAAIAAYAAQAAgABAACAAEAAIAAYAAQAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEMBq7A7X6D9fACAAEIBrkOuPAEAAtoDTXwAiMPwCAAHYAk7/qjYewXxD+n3cGnwbQAiG3wawDf6xDQy+AFa5DR7FYOgF4GqEdwAQAAgABAACAAGAAEAA8DLfCHvClP+5bW6+2SaAyMH//ZmF4AoEAkg6/df0+QUAAgABvMXoL5FeggUAd/ln0CdOUd8HEIAQcAUCAYAAQAAgABAACAAEAAIAAYAAQAAgABAACAAEAAIAAYAAoFgA59Nn85gY1V/zawNgA4AAQADeA8i5/9sA2AAeAQJwDSLw+mMDYAN4BAjANYjA648NgA0wZ11Q+fS3AbABlqgMKp7+L20AETD68LsC4Qr0juqgwuk/yQYQAaMO/2RXIBEw4vB7B8A7QKUaYel56xU/FCw1Z73yh4O552vWYf3aX26+ZFQ+WPuIHxrDP0QAIqD6/Cw6nK5EVDs4+xr/Uhj+khvANqDaAfn2E1kIvPNmUOpKIgZDHx2AGAy9AARh4AEAAAAAmMoPDG0Ua/TEeq0AAAAASUVORK5CYII=
+        run: |
+          mkdir -p app/src/main/java/com/example/intercom
+          printf '%s\n' "$KT_SRC" > app/src/main/java/com/example/intercom/MainActivity.kt
+          printf '%s\n' "$MF_SRC" > app/src/main/AndroidManifest.xml
+          mkdir -p app/src/main/res/mipmap
+          printf '%s' "$ICON_B64" | base64 -d > app/src/main/res/mipmap/ic_launcher.png
+
+      - name: Create project files
+        run: |
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "Intercom"
+          include ':app'
+          EOF
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+              id 'org.jetbrains.kotlin.android' version '1.9.24' apply false
+          }
+          EOF
+          mkdir -p app
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+              id 'org.jetbrains.kotlin.android'
+          }
+          android {
+              namespace 'com.example.intercom'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'com.example.intercom'
+                  minSdk 26
+                  targetSdk 34
+                  versionCode 1
+                  versionName '1.0'
+              }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+              kotlinOptions {
+                  jvmTarget = '17'
+              }
+          }
+          EOF
+
+      - name: Build APK
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
+
+      - name: Show errors in log
+        if: failure()
+        run: |
+          echo "=== ПОСЛЕДНИЕ 60 СТРОК ЛОГА СБОРКИ ==="
+          tail -n 60 build.log
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: intercom-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
