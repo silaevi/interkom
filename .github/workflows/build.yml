@@ -1442,13 +1442,18 @@ jobs:
                 </application>
             </manifest>
           ICON_B64: |
-            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
+            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
         run: |
           mkdir -p app/src/main/java/com/example/intercom
           printf '%s\n' "$KT_SRC" > app/src/main/java/com/example/intercom/MainActivity.kt
           printf '%s\n' "$MF_SRC" > app/src/main/AndroidManifest.xml
           mkdir -p app/src/main/res/mipmap
-          printf '%s' "$ICON_B64" | base64 -d > app/src/main/res/mipmap/ic_launcher.png
+          if ! printf '%s' "$ICON_B64" | base64 -d > app/src/main/res/mipmap/ic_launcher.png 2>/tmp/icon_err; then
+            echo "ОШИБКА ИКОНКИ: $(cat /tmp/icon_err)"
+            exit 1
+          fi
+          echo "Файлы записаны:"
+          ls -l app/src/main/java/com/example/intercom/MainActivity.kt app/src/main/AndroidManifest.xml app/src/main/res/mipmap/ic_launcher.png
 
       - name: Create project files
         run: |
@@ -1506,6 +1511,8 @@ jobs:
               }
           }
           EOF
+          echo "Gradle-файлы созданы"
+          ls -l settings.gradle build.gradle app/build.gradle
 
       - name: Build APK
         run: |
