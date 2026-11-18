@@ -11,6 +11,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Show manifest
+        run: head -c 600 app/src/main/AndroidManifest.xml
+
       - name: Setup Java 17
         uses: actions/setup-java@v6
         with:
@@ -28,7 +31,7 @@ jobs:
           gradle assembleDebug --no-daemon > build_log.txt 2>&1
           code=$?
           if [ $code -ne 0 ]; then
-            grep -E "error:|e: |FAILURE|What went wrong|Caused by|Exception" build_log.txt | head -25 | while IFS= read -r line; do
+            grep -E "error:|e: |FAILURE|What went wrong|Caused by|Exception|parsing" build_log.txt | head -25 | while IFS= read -r line; do
               echo "::error::${line:0:200}"
             done
           fi
