@@ -13,111 +13,843 @@ jobs:
 
       - name: Write sources
         env:
-          KT_GZ: |
-            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
-          MF_GZ: |
-            H4sIALdx/WoC/6WTwU7CMBjH7z7F0jur3gzZwDGqLMKWjBGOSx0FGrauaTuEm/EpfBEvRn2G8UYOtyEE8SA9fv31t/++fjXaqyTW
-            lkRImjITXOmXQCMsSieUzUyQqWnjGrRbF0aCGZ0SqbQCZ7KJ2USkdGKCuVK8CaGM5iTBUq/qepQmEPMFFETCqgZaF1qxjEwS2eBE
-            JFRuv6lV202GE2KCWvAD6D6yPb8bWqOu4wEN/lfjuAHyXRScobBsGw2H4di5dcJhYAXofFcRaOz592fr7J7l3qEy2mDUDxzbGgZn
-            Wzv9EQo8L+iFtue6yN5rHuY8phFWBfZd2K7ah+M4fezgaJFxEyiREXCE0Gg7bjcJ5QnmkEZhjDNWDJE4RmP8QGIT5C/5x+Y5f908
-            5W/5Z/5ezVMZJlJ0SdV6V9k/X/6dPsCUWRUHfgXJiqdCkUmVuXUAGZQpwlRjSmNFxOHeLsPJnpaH9ZLRB5bj7jp5ICkaSmapWP+t
-            qSm9b41cu4f8I5kBT8Q1YN2r6h7h3kUW7xzWD731Bazb0T4aBAAA
+          KT_SRC: |
+            package com.example.intercom
+
+            import android.Manifest
+            import android.annotation.SuppressLint
+            import android.app.Activity
+            import android.bluetooth.BluetoothAdapter
+            import android.content.Context
+            import android.content.pm.PackageManager
+            import android.graphics.Color
+            import android.graphics.Typeface
+            import android.media.*
+            import android.net.nsd.NsdManager
+            import android.net.nsd.NsdServiceInfo
+            import android.net.wifi.WifiManager
+            import android.os.Build
+            import android.os.Bundle
+            import android.view.Gravity
+            import android.view.View
+            import android.view.ViewGroup
+            import android.widget.*
+            import java.net.DatagramPacket
+            import java.net.DatagramSocket
+            import java.net.InetAddress
+            import java.nio.ByteBuffer
+            import java.util.concurrent.CopyOnWriteArraySet
+            import java.util.concurrent.atomic.AtomicInteger
+            import kotlin.concurrent.thread
+            import kotlin.random.Random
+
+            class MainActivity : Activity() {
+
+                companion object {
+                    const val SAMPLE_RATE = 16000
+                    const val AUDIO_PORT = 45678
+                    const val SERVICE_TYPE = "_intercom._tcp."
+                    const val SERVICE_PREFIX = "intercom-"
+                    const val REQUEST_MIC = 1
+                    const val PREFS = "intercom_prefs"
+                    const val KEY_DELAY = "musicDelay"
+                    const val KEY_THEME = "theme"
+                    const val KEY_RELAY = "relay"
+                    const val KEY_MUSIC_FIRST = "musicFirst"
+                    const val KEY_VOICE_GAIN = "voiceGain"
+                    const val KEY_TALK_VOL = "talkVolume"
+                    const val MAX_HOPS = 3
+                    const val HEADER = 9
+                    const val SPEECH_RMS = 1200.0
+                }
+
+                private lateinit var nsdManager: NsdManager
+                private lateinit var audioManager: AudioManager
+
+                private val myId = Random.nextInt()
+                private val seq = AtomicInteger(0)
+
+                private val peers = CopyOnWriteArraySet<InetAddress>()
+                private val foundDevices = LinkedHashMap<String, NsdServiceInfo>()
+                private val resolveQueue = ArrayDeque<NsdServiceInfo>()
+                private var resolving = false
+                private var myServiceName: String? = null
+
+                private var socket: DatagramSocket? = null
+                private var running = false
+                private var micEnabled = true
+                private var musicDelaySec = 2
+                private var themeMode = 0
+                private var relayEnabled = true
+                private var musicFirst = false
+                private var voiceGain = 1.0f
+                private var talkVolume = 100
+                private var speechFrames = 0
+
+                private val recentPackets = LinkedHashMap<Long, Boolean>()
+
+                private var focusRequest: AudioFocusRequest? = null
+                private var focusHeld = false
+                private var lastSpeechTime = 0L
+
+                private var echoTrack: AudioTrack? = null
+                private var recvTrack: AudioTrack? = null
+                private var scoActive = false
+
+                private lateinit var mainScreen: LinearLayout
+                private lateinit var settingsScreen: LinearLayout
+
+                private lateinit var statusView: TextView
+                private lateinit var devicesView: TextView
+                private lateinit var micButton: Button
+                private lateinit var foundListLayout: LinearLayout
+                private var talkVolumeBar: SeekBar? = null
+                private var musicVolumeBar: SeekBar? = null
+                private var voiceGainBar: SeekBar? = null
+                private var voiceGainLabel: TextView? = null
+
+                private var delaySpinner: Spinner? = null
+                private var themeSpinner: Spinner? = null
+                private var relayCheck: CheckBox? = null
+                private var musicFirstCheck: CheckBox? = null
+
+                override fun onCreate(savedInstanceState: Bundle?) {
+                    super.onCreate(savedInstanceState)
+                    title = "Интерком"
+                    audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                    volumeControlStream = AudioManager.STREAM_MUSIC
+
+                    val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    musicDelaySec = prefs.getInt(KEY_DELAY, 2).coerceIn(0, 5)
+                    themeMode = prefs.getInt(KEY_THEME, 0)
+                    relayEnabled = prefs.getBoolean(KEY_RELAY, true)
+                    musicFirst = prefs.getBoolean(KEY_MUSIC_FIRST, false)
+                    voiceGain = prefs.getInt(KEY_VOICE_GAIN, 100) / 100f
+                    talkVolume = prefs.getInt(KEY_TALK_VOL, 100).coerceIn(0, 100)
+
+                    buildUi()
+
+                    if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                        startAll()
+                    } else {
+                        requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_MIC)
+                    }
+                }
+
+                override fun onRequestPermissionsResult(
+                    requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+                ) {
+                    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+                    if (requestCode == REQUEST_MIC && grantResults.isNotEmpty() &&
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        startAll()
+                    } else {
+                        setStatus("Нет разрешения на микрофон", false)
+                    }
+                }
+
+                private fun startAll() {
+                    val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                    val lock = wifi.createMulticastLock("intercom-lock")
+                    lock.setReferenceCounted(false)
+                    lock.acquire()
+
+                    enableBluetoothSco()
+
+                    running = true
+                    socket = try {
+                        DatagramSocket(AUDIO_PORT).apply { broadcast = true; reuseAddress = true }
+                    } catch (e: Exception) {
+                        null
+                    }
+                    if (socket == null) {
+                        setStatus("Порт занят. Перезапустите приложение", false)
+                        return
+                    }
+
+                    thread(name = "recv") { receiveLoop() }
+                    thread(name = "send") { sendLoop() }
+                    thread(name = "hello") { helloLoop() }
+                    registerNsd()
+                    setStatus("Микрофон активен. Автоматический поиск устройств по Wi-Fi...", true)
+                }
+
+                @SuppressLint("MissingPermission")
+                private fun enableBluetoothSco() {
+                    try {
+                        val bt = BluetoothAdapter.getDefaultAdapter()
+                        if (bt == null || !bt.isEnabled) return
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            val scoDevice = audioManager.availableCommunicationDevices.firstOrNull {
+                                it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                            }
+                            if (scoDevice != null) {
+                                audioManager.setCommunicationDevice(scoDevice)
+                                scoActive = true
+                            }
+                        } else {
+                            audioManager.startBluetoothSco()
+                            audioManager.isBluetoothScoOn = true
+                            scoActive = true
+                        }
+                    } catch (e: SecurityException) {
+                        // Нет разрешения на Bluetooth, используется обычный микрофон
+                    }
+                }
+
+                // ================= Автопоиск: NSD + broadcast =================
+
+                private fun registerNsd() {
+                    nsdManager = getSystemService(Context.NSD_SERVICE) as NsdManager
+
+                    val info = NsdServiceInfo().apply {
+                        serviceName = SERVICE_PREFIX + Build.MODEL.replace(" ", "_")
+                        serviceType = SERVICE_TYPE
+                        port = AUDIO_PORT
+                    }
+
+                    nsdManager.registerService(info, NsdManager.PROTOCOL_DNS_SD,
+                        object : NsdManager.RegistrationListener {
+                            override fun onServiceRegistered(n: NsdServiceInfo) {
+                                myServiceName = n.serviceName
+                            }
+                            override fun onRegistrationFailed(n: NsdServiceInfo, e: Int) {
+                                setStatus("Ошибка регистрации: $e", false)
+                            }
+                            override fun onServiceUnregistered(n: NsdServiceInfo) {}
+                            override fun onUnregistrationFailed(n: NsdServiceInfo, e: Int) {}
+                        })
+
+                    nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD,
+                        object : NsdManager.DiscoveryListener {
+                            override fun onDiscoveryStarted(t: String) {}
+                            override fun onStartDiscoveryFailed(t: String, e: Int) {
+                                setStatus("Автопоиск работает через broadcast-канал", true)
+                            }
+                            override fun onStopDiscoveryFailed(t: String, e: Int) {}
+                            override fun onDiscoveryStopped(t: String) {}
+                            override fun onServiceLost(info: NsdServiceInfo) {}
+                            override fun onServiceFound(info: NsdServiceInfo) {
+                                if (info.serviceName == myServiceName) return
+                                var isNew = false
+                                synchronized(foundDevices) {
+                                    if (!foundDevices.containsKey(info.serviceName)) {
+                                        foundDevices[info.serviceName] = info
+                                        isNew = true
+                                    }
+                                }
+                                if (isNew) {
+                                    runOnUiThread { refreshLists() }
+                                    queueResolve(info)
+                                }
+                            }
+                        })
+                }
+
+                private fun queueResolve(info: NsdServiceInfo) {
+                    synchronized(resolveQueue) { resolveQueue.addLast(info) }
+                    tryResolveNext()
+                }
+
+                private fun tryResolveNext() {
+                    val next: NsdServiceInfo = synchronized(resolveQueue) {
+                        if (resolving || resolveQueue.isEmpty()) return
+                        resolving = true
+                        resolveQueue.removeFirst()
+                    }
+                    try {
+                        nsdManager.resolveService(next, object : NsdManager.ResolveListener {
+                            override fun onServiceResolved(resolved: NsdServiceInfo) {
+                                val host = resolved.host
+                                if (host != null && peers.add(host)) {
+                                    setStatus("Подключено: ${resolved.serviceName}. Говорите без кнопок!", true)
+                                }
+                                runOnUiThread { refreshLists() }
+                                finishResolve()
+                            }
+                            override fun onResolveFailed(i: NsdServiceInfo, e: Int) {
+                                finishResolve()
+                            }
+                        })
+                    } catch (e: Exception) {
+                        finishResolve()
+                    }
+                }
+
+                private fun finishResolve() {
+                    synchronized(resolveQueue) { resolving = false }
+                    tryResolveNext()
+                }
+
+                private fun helloLoop() {
+                    while (running) {
+                        try {
+                            val out = buildPacket(ByteArray(0), 0, myId, seq.incrementAndGet(), 0)
+                            socket?.send(DatagramPacket(out, out.size,
+                                InetAddress.getByName("255.255.255.255"), AUDIO_PORT))
+                        } catch (e: Exception) {}
+                        try {
+                            Thread.sleep(3000)
+                        } catch (e: InterruptedException) { break }
+                    }
+                }
+
+                private fun handleHello(addr: InetAddress?) {
+                    if (addr == null) return
+                    if (peers.add(addr)) {
+                        setStatus("Подключено устройство: $addr", true)
+                        try {
+                            val out = buildPacket(ByteArray(0), 0, myId, seq.incrementAndGet(), 0)
+                            socket?.send(DatagramPacket(out, out.size, addr, AUDIO_PORT))
+                        } catch (e: Exception) {}
+                        runOnUiThread { refreshLists() }
+                    }
+                }
+
+                private fun refreshLists() {
+                    devicesView.text = if (peers.isEmpty()) "нет подключений"
+                        else peers.joinToString("\n") { "• $it" }
+                    foundListLayout.removeAllViews()
+                    val names: List<String> = synchronized(foundDevices) { foundDevices.keys.toList() }
+                    if (names.isEmpty()) {
+                        foundListLayout.addView(TextView(this).apply {
+                            text = "Идёт автоматический поиск..."
+                        })
+                    } else {
+                        for (name in names) {
+                            foundListLayout.addView(TextView(this).apply {
+                                text = "• ${name.removePrefix(SERVICE_PREFIX)}"
+                                textSize = 16f
+                            })
+                        }
+                    }
+                }
+
+                // ================= Пакеты =================
+
+                private fun buildPacket(audio: ByteArray, audioLen: Int, srcId: Int, seqNum: Int, ttl: Int): ByteArray {
+                    val bb = ByteBuffer.allocate(audioLen + HEADER)
+                    bb.putInt(srcId)
+                    bb.putInt(seqNum)
+                    bb.put(ttl.toByte())
+                    bb.put(audio, 0, audioLen)
+                    return bb.array()
+                }
+
+                private fun isDuplicate(key: Long): Boolean {
+                    synchronized(recentPackets) {
+                        if (recentPackets.containsKey(key)) return true
+                        recentPackets[key] = true
+                        if (recentPackets.size > 512) {
+                            val it = recentPackets.entries.iterator()
+                            if (it.hasNext()) { it.next(); it.remove() }
+                        }
+                        return false
+                    }
+                }
+
+                private fun rmsOf(bytes: ByteArray, offset: Int, len: Int): Double {
+                    var sum = 0.0
+                    var count = 0
+                    var i = offset
+                    val end = offset + len - 1
+                    while (i < end) {
+                        val v = ((bytes[i].toInt() and 0xFF) or (bytes[i + 1].toInt() shl 8)).toShort().toDouble()
+                        sum += v * v
+                        count += 2
+                        i += 2
+                    }
+                    return if (count == 0) 0.0 else Math.sqrt(sum / count)
+                }
+
+                // ================= Приём и ретрансляция =================
+
+                private fun pcmOutFormat(): AudioFormat =
+                    AudioFormat.Builder().setSampleRate(SAMPLE_RATE)
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build()
+
+                private fun receiveLoop() {
+                    try {
+                        val minBuf = AudioTrack.getMinBufferSize(
+                            SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
+                        val track = AudioTrack(
+                            AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_MEDIA)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                                .build(),
+                            pcmOutFormat(), maxOf(minBuf, SAMPLE_RATE * 2),
+                            AudioTrack.MODE_STREAM, 0)
+                        recvTrack = track
+                        track.setVolume(talkVolume / 100f)
+                        track.play()
+
+                        val buf = ByteArray(6400)
+                        while (running) {
+                            try {
+                                val packet = DatagramPacket(buf, buf.size)
+                                socket?.receive(packet)
+                                if (packet.length < HEADER) continue
+
+                                val bb = ByteBuffer.wrap(buf, 0, packet.length)
+                                val srcId = bb.int
+                                val rseq = bb.int
+                                val ttl = bb.get().toInt()
+
+                                if (srcId == myId) continue
+
+                                if (ttl == 0) {
+                                    handleHello(packet.address)
+                                    continue
+                                }
+                                if (packet.length <= HEADER) continue
+
+                                val key = (srcId.toLong() shl 32) or (rseq.toLong() and 0xFFFFFFFFL)
+                                if (isDuplicate(key)) continue
+
+                                val audioLen = packet.length - HEADER
+                                onVoiceDetected(rmsOf(buf, HEADER, audioLen) > SPEECH_RMS,
+                                    System.currentTimeMillis())
+
+                                track.write(buf, HEADER, audioLen)
+                                echoTrack?.write(buf, HEADER, audioLen)
+
+                                if (relayEnabled && ttl > 1) {
+                                    val fwd = buildPacket(buf, audioLen, srcId, rseq, ttl - 1)
+                                    for (p in peers) {
+                                        if (p == packet.address) continue
+                                        try {
+                                            socket?.send(DatagramPacket(fwd, fwd.size, p, AUDIO_PORT))
+                                        } catch (e: Exception) {}
+                                    }
+                                }
+                            } catch (e: Exception) { break }
+                        }
+                        track.stop(); track.release()
+                    } catch (e: Exception) {
+                        setStatus("Ошибка аудио: ${e.message}", false)
+                    }
+                }
+
+                // ================= Отправка =================
+
+                private fun sendLoop() {
+                    try {
+                        val minBuf = AudioRecord.getMinBufferSize(
+                            SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+                        val rec = AudioRecord(
+                            MediaRecorder.AudioSource.MIC,
+                            SAMPLE_RATE,
+                            AudioFormat.CHANNEL_IN_MONO,
+                            AudioFormat.ENCODING_PCM_16BIT,
+                            maxOf(minBuf, SAMPLE_RATE * 2))
+
+                        rec.startRecording()
+                        val buf = ShortArray(1600)
+
+                        while (running) {
+                            val n = rec.read(buf, 0, buf.size)
+                            if (n <= 0) continue
+
+                            var sum = 0.0
+                            for (i in 0 until n) sum += buf[i].toDouble() * buf[i]
+                            val rms = Math.sqrt(sum / n)
+
+                            val bytes = ByteArray(n * 2)
+                            val g = voiceGain
+                            for (i in 0 until n) {
+                                var v = (buf[i] * g).toInt()
+                                if (v > 32767) v = 32767
+                                if (v < -32768) v = -32768
+                                bytes[2 * i] = (v and 0xFF).toByte()
+                                bytes[2 * i + 1] = (v shr 8 and 0xFF).toByte()
+                            }
+
+                            if (micEnabled && peers.isNotEmpty()) {
+                                onVoiceDetected(rms > SPEECH_RMS, System.currentTimeMillis())
+
+                                val s = seq.incrementAndGet()
+                                val out = buildPacket(bytes, bytes.size, myId, s, MAX_HOPS)
+                                for (p in peers) {
+                                    try {
+                                        socket?.send(DatagramPacket(out, out.size, p, AUDIO_PORT))
+                                    } catch (e: Exception) {}
+                                }
+                            } else if (!micEnabled && focusHeld) {
+                                abandonFocus()
+                            }
+                        }
+                        rec.stop(); rec.release()
+                    } catch (e: Exception) {
+                        setStatus("Ошибка микрофона: ${e.message}", false)
+                    }
+                }
+
+                // ================= Пауза музыки =================
+
+                private fun onVoiceDetected(loud: Boolean, now: Long) {
+                    if (musicFirst) {
+                        if (focusHeld) abandonFocus()
+                        return
+                    }
+                    if (loud) {
+                        speechFrames++
+                        if (speechFrames >= 3) {
+                            if (!focusHeld) requestFocus()
+                            lastSpeechTime = now
+                        }
+                    } else {
+                        speechFrames = 0
+                    }
+                    if (focusHeld && now - lastSpeechTime > musicDelaySec * 1000L) {
+                        abandonFocus()
+                    }
+                }
+
+                private fun requestFocus() {
+                    val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                        .setAudioAttributes(
+                            AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_MEDIA)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+                        .build()
+                    focusRequest = req
+                    focusHeld = audioManager.requestAudioFocus(req) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+                    if (focusHeld) setStatus("Музыка на паузе (идёт разговор)", true)
+                }
+
+                private fun abandonFocus() {
+                    focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+                    focusRequest = null
+                    focusHeld = false
+                    speechFrames = 0
+                }
+
+                // ================= Оформление =================
+
+                private fun applyBackground(view: View) {
+                    if (view is CheckBox) {
+                        view.setTextColor(if (themeMode == 0) Color.BLACK else Color.WHITE)
+                    } else if (view is Button) {
+                        // Цвет кнопок не зависит от темы
+                    } else {
+                        view.setBackgroundColor(if (themeMode == 0) 0xFFF8F9FA.toInt() else 0xFF1E1E1E.toInt())
+                        if (view is TextView) {
+                            view.setTextColor(if (themeMode == 0) Color.BLACK else Color.WHITE)
+                        }
+                    }
+                    if (view is ViewGroup) {
+                        for (i in 0 until view.childCount) applyBackground(view.getChildAt(i))
+                    }
+                }
+
+                private fun boldLabel(text: String): TextView = TextView(this).apply {
+                    this.text = text
+                    setTypeface(Typeface.DEFAULT_BOLD)
+                    textSize = 17f
+                }
+
+                private fun styledButton(text: String, color: Int): Button = Button(this).apply {
+                    this.text = text
+                    textSize = 17f
+                    setTypeface(Typeface.DEFAULT_BOLD)
+                    setTextColor(Color.WHITE)
+                    isAllCaps = false
+                    backgroundTintList = android.content.res.ColorStateList.valueOf(color)
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                }
+
+                // ================= Интерфейс =================
+
+                private fun buildUi() {
+                    val d = resources.displayMetrics.density
+                    val pad = (16 * d).toInt()
+
+                    statusView = TextView(this)
+                    devicesView = TextView(this)
+                    foundListLayout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+
+                    micButton = styledButton("Микрофон: ВКЛ", 0xFF1A73E8.toInt()).apply {
+                        setOnClickListener {
+                            micEnabled = !micEnabled
+                            if (micEnabled) {
+                                text = "Микрофон: ВКЛ"
+                                backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF1A73E8.toInt())
+                            } else {
+                                text = "Микрофон: ВЫКЛ"
+                                backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF607D8B.toInt())
+                            }
+                            if (!micEnabled && focusHeld) abandonFocus()
+                        }
+                    }
+
+                    val testButton = styledButton("Проверка связи (эхо 3 сек)", 0xFF28A745.toInt()).apply {
+                        setOnClickListener {
+                            if (!running) return@setOnClickListener
+                            val minBuf = AudioTrack.getMinBufferSize(
+                                SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
+                            val track = AudioTrack(
+                                AudioAttributes.Builder()
+                                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build(),
+                                pcmOutFormat(), maxOf(minBuf, SAMPLE_RATE * 2), AudioTrack.MODE_STREAM, 0)
+                            track.setVolume(talkVolume / 100f)
+                            echoTrack = track
+                            thread {
+                                track.play()
+                                Thread.sleep(3000)
+                                track.stop(); track.release()
+                                echoTrack = null
+                            }
+                            Toast.makeText(this@MainActivity, "Говорите, услышите себя 3 секунды", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    val settingsButton = styledButton("Настройки", 0xFF7B1FA2.toInt()).apply {
+                        setOnClickListener {
+                            mainScreen.visibility = View.GONE
+                            settingsScreen.visibility = View.VISIBLE
+                        }
+                    }
+
+                    talkVolumeBar = SeekBar(this).apply {
+                        max = 100
+                        progress = talkVolume
+                        setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                            override fun onProgressChanged(s: SeekBar?, vol: Int, fromUser: Boolean) {
+                                if (fromUser) {
+                                    talkVolume = vol
+                                    recvTrack?.setVolume(vol / 100f)
+                                    echoTrack?.setVolume(vol / 100f)
+                                    getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                                        .edit().putInt(KEY_TALK_VOL, vol).apply()
+                                }
+                            }
+                            override fun onStartTrackingTouch(s: SeekBar?) {}
+                            override fun onStopTrackingTouch(s: SeekBar?) {}
+                        })
+                    }
+
+                    val header = LinearLayout(this).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = Gravity.CENTER
+                    }
+                    header.addView(ImageView(this).apply {
+                        setImageResource(R.mipmap.ic_launcher)
+                        layoutParams = LinearLayout.LayoutParams((64 * d).toInt(), (64 * d).toInt())
+                    })
+                    header.addView(TextView(this).apply {
+                        text = "Интерком"
+                        textSize = 28f
+                        setTypeface(Typeface.DEFAULT_BOLD)
+                        setPadding((12 * d).toInt(), 0, 0, 0)
+                    })
+
+                    mainScreen = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPadding(pad, pad, pad, pad)
+                        addView(header)
+                        addView(TextView(this@MainActivity).apply {
+                            text = "Говорите без кнопок. Все устройства сети подключаются автоматически."
+                            textSize = 16f
+                        })
+                        addView(boldLabel("Громкость разговора:").apply { setPadding(0, pad, 0, 0) })
+                        addView(talkVolumeBar)
+                        addView(micButton)
+                        addView(testButton)
+                        addView(settingsButton)
+                        addView(statusView)
+                        addView(boldLabel("Найденные устройства (подключаются сами):").apply { setPadding(0, pad, 0, pad / 2) })
+                        addView(foundListLayout)
+                        addView(boldLabel("Активные соединения:").apply { setPadding(0, pad, 0, pad / 2) })
+                        addView(devicesView)
+                    }
+
+                    // ---------- ЭКРАН НАСТРОЕК ----------
+
+                    musicFirstCheck = CheckBox(this).apply {
+                        text = "Музыка всегда на первом месте (не ставить на паузу)"
+                        isChecked = musicFirst
+                        setOnCheckedChangeListener { _, checked ->
+                            musicFirst = checked
+                            getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                                .edit().putBoolean(KEY_MUSIC_FIRST, checked).apply()
+                            if (checked) abandonFocus()
+                        }
+                    }
+
+                    delaySpinner = Spinner(this).apply {
+                        adapter = ArrayAdapter(this@MainActivity,
+                            android.R.layout.simple_spinner_dropdown_item,
+                            arrayOf("Пауза музыки: 0 сек", "Пауза музыки: 1 сек", "Пауза музыки: 2 сек",
+                                    "Пауза музыки: 3 сек", "Пауза музыки: 4 сек", "Пауза музыки: 5 сек"))
+                        setSelection(musicDelaySec)
+                    }
+                    delaySpinner!!.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                        override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                            musicDelaySec = pos
+                            getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                                .edit().putInt(KEY_DELAY, pos).apply()
+                        }
+                        override fun onNothingSelected(p: AdapterView<*>?) {}
+                    }
+
+                    voiceGainBar = SeekBar(this).apply {
+                        max = 200
+                        progress = (voiceGain * 100).toInt()
+                    }
+                    voiceGainLabel = boldLabel("Громкость голоса: ${(voiceGain * 100).toInt()}%")
+                    voiceGainBar!!.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                        override fun onProgressChanged(s: SeekBar?, prog: Int, fromUser: Boolean) {
+                            if (fromUser) {
+                                val g = if (prog < 10) 10 else prog
+                                voiceGain = g / 100f
+                                voiceGainLabel?.text = "Громкость голоса: $g%"
+                                getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                                    .edit().putInt(KEY_VOICE_GAIN, g).apply()
+                            }
+                        }
+                        override fun onStartTrackingTouch(s: SeekBar?) {}
+                        override fun onStopTrackingTouch(s: SeekBar?) {}
+                    })
+
+                    musicVolumeBar = SeekBar(this).apply {
+                        max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                        progress = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                        setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                            override fun onProgressChanged(s: SeekBar?, vol: Int, fromUser: Boolean) {
+                                if (fromUser) audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0)
+                            }
+                            override fun onStartTrackingTouch(s: SeekBar?) {}
+                            override fun onStopTrackingTouch(s: SeekBar?) {}
+                        })
+                    }
+
+                    relayCheck = CheckBox(this).apply {
+                        text = "Ретрансляция звука: звук передаётся и через промежуточные устройства"
+                        isChecked = relayEnabled
+                        setOnCheckedChangeListener { _, checked ->
+                            relayEnabled = checked
+                            getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                                .edit().putBoolean(KEY_RELAY, checked).apply()
+                        }
+                    }
+
+                    themeSpinner = Spinner(this).apply {
+                        adapter = ArrayAdapter(this@MainActivity,
+                            android.R.layout.simple_spinner_dropdown_item,
+                            arrayOf("Оформление: светлое", "Оформление: тёмное"))
+                        setSelection(themeMode)
+                    }
+                    themeSpinner!!.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                        override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                            if (pos != themeMode) {
+                                themeMode = pos
+                                getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                                    .edit().putInt(KEY_THEME, pos).apply()
+                                recreate()
+                            }
+                        }
+                        override fun onNothingSelected(p: AdapterView<*>?) {}
+                    }
+
+                    val backButton = styledButton("Назад", 0xFF546E7A.toInt()).apply {
+                        setOnClickListener {
+                            settingsScreen.visibility = View.GONE
+                            mainScreen.visibility = View.VISIBLE
+                        }
+                    }
+
+                    settingsScreen = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPadding(pad, pad, pad, pad)
+                        visibility = View.GONE
+                        addView(TextView(this@MainActivity).apply {
+                            text = "Настройки"
+                            textSize = 24f
+                            setTypeface(Typeface.DEFAULT_BOLD)
+                        })
+                        addView(musicFirstCheck)
+                        addView(boldLabel("Пауза музыки после разговора:").apply { setPadding(0, pad, 0, 0) })
+                        addView(delaySpinner)
+                        addView(boldLabel("Громкость голоса (насколько громко вас слышат):").apply { setPadding(0, pad, 0, 0) })
+                        addView(voiceGainLabel)
+                        addView(voiceGainBar)
+                        addView(boldLabel("Громкость музыки:").apply { setPadding(0, pad, 0, 0) })
+                        addView(musicVolumeBar)
+                        addView(relayCheck)
+                        addView(themeSpinner)
+                        addView(TextView(this@MainActivity).apply {
+                            text = "Все настройки сохраняются автоматически."
+                            setPadding(0, pad, 0, 0)
+                        })
+                        addView(backButton)
+                    }
+
+                    val root = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(mainScreen)
+                        addView(settingsScreen)
+                    }
+                    applyBackground(root)
+                    setContentView(ScrollView(this).apply { addView(root) })
+                }
+
+                private fun setStatus(text: String, ok: Boolean) {
+                    runOnUiThread {
+                        statusView.text = "Статус: $text"
+                        statusView.setTextColor(if (ok) 0xFF28A745.toInt() else 0xFFDC3545.toInt())
+                    }
+                }
+
+                override fun onBackPressed() {
+                    if (settingsScreen.visibility == View.VISIBLE) {
+                        settingsScreen.visibility = View.GONE
+                        mainScreen.visibility = View.VISIBLE
+                    } else {
+                        super.onBackPressed()
+                    }
+                }
+
+                override fun onDestroy() {
+                    super.onDestroy()
+                    running = false
+                    if (scoActive && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                        try {
+                            audioManager.isBluetoothScoOn = false
+                            audioManager.stopBluetoothSco()
+                        } catch (e: Exception) {}
+                    }
+                    try { socket?.close() } catch (e: Exception) {}
+                    try { recvTrack?.stop(); recvTrack?.release() } catch (e: Exception) {}
+                    try { echoTrack?.stop(); echoTrack?.release() } catch (e: Exception) {}
+                    abandonFocus()
+                }
+            }
+          MF_SRC: |
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <uses-permission android:name="android.permission.RECORD_AUDIO" />
+                <uses-permission android:name="android.permission.INTERNET" />
+                <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+                <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+                <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+                <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+                <application
+                    android:allowBackup="true"
+                    android:icon="@mipmap/ic_launcher"
+                    android:label="Интерком">
+                    <activity
+                        android:name=".MainActivity"
+                        android:exported="true">
+                        <intent-filter>
+                            <action android:name="android.intent.action.MAIN" />
+                            <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
           ICON_GZ: |
             H4sIALdx/WoC/31UaTQUWhy/M4xtZMkWYXCeqGQYWjRiyDK8ytipHuNhPJKkZ4RiYiyPrJGlhOQdL0Im2SVqpLFEDEqYMrbBDJIp
             4g350Id33j3n3v+5/9/yvx/u+f2FO2O5S0RBBACwywprZserLVtbSIB32o34CwIAa7UyM3G4enf+g9VtKV0Jsoeu/52iIz43ilrr
@@ -141,14 +873,24 @@ jobs:
             iahpTpAiUTfeUvOkkZtpJO0DqRsXf9VQQHknhl+sC5hsyJUirVlZW1cr8zNm5ab4qH8BERPqP/sFAAA=
         run: |
           mkdir -p app/src/main/java/com/example/intercom app/src/main/res/mipmap-xxxhdpi
-          echo "$KT_GZ" | tr -d ' \n' | base64 -d | gunzip > app/src/main/java/com/example/intercom/MainActivity.kt || { echo "::error::KT_GZ corrupted"; exit 1; }
-          echo "$MF_GZ" | tr -d ' \n' | base64 -d | gunzip > app/src/main/AndroidManifest.xml || { echo "::error::MF_GZ corrupted"; exit 1; }
+          printf '%s\n' "$KT_SRC" > app/src/main/java/com/example/intercom/MainActivity.kt
+          printf '%s\n' "$MF_SRC" > app/src/main/AndroidManifest.xml
           echo "$ICON_GZ" | tr -d ' \n' | base64 -d | gunzip > app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || { echo "::error::ICON_GZ corrupted"; exit 1; }
-          grep -q "package com.example.intercom" app/src/main/java/com/example/intercom/MainActivity.kt || { echo "::error::KT_GZ corrupted"; exit 1; }
-          grep -q "</manifest>" app/src/main/AndroidManifest.xml || { echo "::error::MF_GZ corrupted"; exit 1; }
+          grep -q "package com.example.intercom" app/src/main/java/com/example/intercom/MainActivity.kt || { echo "::error::KT_SRC corrupted"; exit 1; }
+          grep -q "</manifest>" app/src/main/AndroidManifest.xml || { echo "::error::MF_SRC corrupted"; exit 1; }
+          grep -q "ic_launcher" app/src/main/AndroidManifest.xml || { echo "::error::MF_SRC missing icon"; exit 1; }
           echo "::notice::Kotlin lines: $(wc -l < app/src/main/java/com/example/intercom/MainActivity.kt)"
           echo "::notice::Kotlin bytes: $(wc -c < app/src/main/java/com/example/intercom/MainActivity.kt)"
           echo "::notice::Icon bytes: $(wc -c < app/src/main/res/mipmap-xxxhdpi/ic_launcher.png)"
+
+      - name: Fix encoding
+        run: |
+          for F in app/src/main/java/com/example/intercom/MainActivity.kt app/src/main/AndroidManifest.xml; do
+            if ! iconv -f UTF-8 -t UTF-8 "$F" >/dev/null 2>&1; then
+              iconv -f CP1251 -t UTF-8 "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+            fi
+            sed -i 's/\r$//' "$F"
+          done
 
       - name: Setup Java 17
         uses: actions/setup-java@v6
