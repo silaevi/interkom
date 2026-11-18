@@ -77,6 +77,7 @@ jobs:
                     const val MAX_HOPS = 3
                     const val HEADER = 9
                     const val SPEECH_RMS = 1200.0
+                    const val P2P_STATE_ENABLED = 2
                 }
 
                 private lateinit var nsdManager: NsdManager
@@ -126,6 +127,8 @@ jobs:
                     CopyOnWriteArraySet<String>()
                 private var intentPeers = ""
                 private var intentConn = ""
+                private var intentState = ""
+                private var p2pGroupCreated = false
 
                 private lateinit var mainScreen: LinearLayout
                 private lateinit var settingsScreen: LinearLayout
@@ -315,9 +318,14 @@ jobs:
                             .getField(
                                 "WIFI_P2P_" + "CONNECTION_CHANGED_ACTION")
                             .get(null) as String
+                        intentState = cls
+                            .getField(
+                                "WIFI_P2P_" + "STATE_CHANGED_ACTION")
+                            .get(null) as String
                         val f = IntentFilter()
                         f.addAction(intentPeers)
                         f.addAction(intentConn)
+                        f.addAction(intentState)
                         registerReceiver(p2pReceiver, f)
                         startDiscover()
                     } catch (e: Exception) {
@@ -337,6 +345,13 @@ jobs:
                             }
                             if (i.action == intentConn) {
                                 requestConnInfoNow()
+                            }
+                            if (i.action == intentState) {
+                                val st = i.getIntExtra(
+                                    "extra_wifi_state", -1)
+                                if (st == P2P_STATE_ENABLED) {
+                                    startDiscover()
+                                }
                             }
                         }
                     }
@@ -362,6 +377,25 @@ jobs:
                             it.name == "discoverPeers" &&
                                 it.parameterTypes.size == 2 }
                         m.invoke(mgr, ch, l)
+                    } catch (e: Exception) {}
+                }
+
+                private fun tryCreateGroup() {
+                    if (p2pGroupCreated) return
+                    try {
+                        val mgr = p2pObj ?: return
+                        val ch = p2pCh ?: return
+                        val m = mgr.javaClass.methods.firstOrNull {
+                            it.name == "createGroup" &&
+                                it.parameterTypes.size == 2
+                        } ?: return
+                        val l = p2pListener("ActionListener")
+                        m.invoke(mgr, ch, l)
+                        p2pGroupCreated = true
+                        setStatus(
+                            "Wi-Fi Direct: создаю точку подключения. " +
+                                "Если появится запрос — подтвердите на втором телефоне",
+                            true)
                     } catch (e: Exception) {}
                 }
 
@@ -395,13 +429,20 @@ jobs:
                         cfg.javaClass
                             .getField("deviceAddress")
                             .set(cfg, addr)
+                        try {
+                            val f = cfg.javaClass
+                                .getField("groupOwnerIntent")
+                            f.setInt(cfg, 15)
+                        } catch (e: Exception) {}
                         val l = p2pListener("ActionListener")
                         val m = mgr.javaClass.methods.first {
                             it.name == "connect" &&
                                 it.parameterTypes.size == 3 }
                         m.invoke(mgr, ch, cfg, l)
                         setStatus(
-                            "Wi-Fi Direct: подключаюсь к $nm", true)
+                            "Wi-Fi Direct: приглашаю $nm. " +
+                                "Подтвердите запрос, если он появится на экране",
+                            true)
                     } catch (e: Exception) {}
                 }
 
@@ -577,6 +618,12 @@ jobs:
                                         o, AUDIO_PORT))
                             }
                             if (n % 4 == 0) startDiscover()
+                            if (n % 5 == 4 &&
+                                peers.isEmpty() &&
+                                p2pObj != null
+                            ) {
+                                tryCreateGroup()
+                            }
                         } catch (e: Exception) {}
                         n++
                         try {
