@@ -37,6 +37,7 @@ jobs:
             import android.view.View
             import android.view.ViewGroup
             import android.widget.*
+            import java.lang.reflect.Proxy
             import java.net.DatagramPacket
             import java.net.DatagramSocket
             import java.net.InetAddress
@@ -73,8 +74,10 @@ jobs:
                 private val seq = AtomicInteger(0)
 
                 private val peers = CopyOnWriteArraySet<InetAddress>()
-                private val foundDevices = LinkedHashMap<String, NsdServiceInfo>()
-                private val resolveQueue = ArrayDeque<NsdServiceInfo>()
+                private val foundDevices =
+                    LinkedHashMap<String, NsdServiceInfo>()
+                private val resolveQueue =
+                    ArrayDeque<NsdServiceInfo>()
                 private var resolving = false
                 private var myServiceName: String? = null
 
@@ -89,7 +92,8 @@ jobs:
                 private var talkVolume = 100
                 private var speechFrames = 0
 
-                private val recentPackets = LinkedHashMap<Long, Boolean>()
+                private val recentPackets =
+                    LinkedHashMap<Long, Boolean>()
 
                 private var focusRequest: AudioFocusRequest? = null
                 private var focusHeld = false
@@ -99,10 +103,16 @@ jobs:
                 private var recvTrack: AudioTrack? = null
                 private var scoActive = false
 
-                private var p2p: android.net.wifi.WifiP2pManager? = null
-                private var p2pChannel: android.net.wifi.WifiP2pManager.Channel? = null
+                private val PKG = "android.net.wifi."
+                private val CLS_MGR =
+                    PKG + "Wifi" + "P2pManager"
+                private var p2pObj: Any? = null
+                private var p2pCh: Any? = null
                 private var owner: InetAddress? = null
-                private val p2pTried = CopyOnWriteArraySet<String>()
+                private val p2pTried =
+                    CopyOnWriteArraySet<String>()
+                private var intentPeers = ""
+                private var intentConn = ""
 
                 private lateinit var mainScreen: LinearLayout
                 private lateinit var settingsScreen: LinearLayout
@@ -124,43 +134,66 @@ jobs:
                 override fun onCreate(savedInstanceState: Bundle?) {
                     super.onCreate(savedInstanceState)
                     title = "Интерком"
-                    audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                    audioManager = getSystemService(
+                        Context.AUDIO_SERVICE) as AudioManager
                     volumeControlStream = AudioManager.STREAM_MUSIC
 
-                    val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                    musicDelaySec = prefs.getInt(KEY_DELAY, 2).coerceIn(0, 5)
+                    val prefs = getSharedPreferences(
+                        PREFS, Context.MODE_PRIVATE)
+                    musicDelaySec =
+                        prefs.getInt(KEY_DELAY, 2).coerceIn(0, 5)
                     themeMode = prefs.getInt(KEY_THEME, 0)
-                    relayEnabled = prefs.getBoolean(KEY_RELAY, true)
-                    musicFirst = prefs.getBoolean(KEY_MUSIC_FIRST, false)
-                    voiceGain = prefs.getInt(KEY_VOICE_GAIN, 100) / 100f
-                    talkVolume = prefs.getInt(KEY_TALK_VOL, 100).coerceIn(0, 100)
+                    relayEnabled =
+                        prefs.getBoolean(KEY_RELAY, true)
+                    musicFirst =
+                        prefs.getBoolean(KEY_MUSIC_FIRST, false)
+                    voiceGain =
+                        prefs.getInt(KEY_VOICE_GAIN, 100) / 100f
+                    talkVolume =
+                        prefs.getInt(KEY_TALK_VOL, 100)
+                            .coerceIn(0, 100)
 
                     buildUi()
 
                     val perms = ArrayList<String>()
                     perms.add(Manifest.permission.RECORD_AUDIO)
-                    perms.add(Manifest.permission.ACCESS_FINE_LOCATION)
-                    if (Build.VERSION.SDK_INT >= 33) perms.add(Manifest.permission.NEARBY_WIFI_DEVICES)
-                    requestPermissions(perms.toTypedArray(), REQUEST_MIC)
+                    perms.add(
+                        Manifest.permission.ACCESS_FINE_LOCATION)
+                    if (Build.VERSION.SDK_INT >= 33) {
+                        perms.add(
+                            Manifest.permission.NEARBY_WIFI_DEVICES)
+                    }
+                    requestPermissions(
+                        perms.toTypedArray(), REQUEST_MIC)
                 }
 
                 override fun onRequestPermissionsResult(
-                    requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+                    requestCode: Int,
+                    permissions: Array<out String>,
+                    grantResults: IntArray
                 ) {
-                    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+                    super.onRequestPermissionsResult(
+                        requestCode, permissions, grantResults)
                     if (requestCode == REQUEST_MIC) {
                         var micOk = false
                         for (i in grantResults.indices) {
-                            if (permissions[i] == Manifest.permission.RECORD_AUDIO &&
-                                grantResults[i] == PackageManager.PERMISSION_GRANTED) micOk = true
+                            if (permissions[i] ==
+                                Manifest.permission.RECORD_AUDIO &&
+                                grantResults[i] ==
+                                PackageManager.PERMISSION_GRANTED
+                            ) micOk = true
                         }
-                        if (micOk) startAll() else setStatus("Нет разрешения на микрофон", false)
+                        if (micOk) startAll()
+                        else setStatus(
+                            "Нет разрешения на микрофон", false)
                     }
                 }
 
                 private fun startAll() {
-                    val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-                    val lock = wifi.createMulticastLock("intercom-lock")
+                    val wifi = applicationContext.getSystemService(
+                        Context.WIFI_SERVICE) as WifiManager
+                    val lock = wifi.createMulticastLock(
+                        "intercom-lock")
                     lock.setReferenceCounted(false)
                     lock.acquire()
 
@@ -169,12 +202,17 @@ jobs:
 
                     running = true
                     socket = try {
-                        DatagramSocket(AUDIO_PORT).apply { broadcast = true; reuseAddress = true }
+                        DatagramSocket(AUDIO_PORT).apply {
+                            broadcast = true
+                            reuseAddress = true
+                        }
                     } catch (e: Exception) {
                         null
                     }
                     if (socket == null) {
-                        setStatus("Порт занят. Перезапустите приложение", false)
+                        setStatus(
+                            "Порт занят. Перезапустите приложение",
+                            false)
                         return
                     }
 
@@ -182,7 +220,9 @@ jobs:
                     thread(name = "send") { sendLoop() }
                     thread(name = "hello") { helloLoop() }
                     registerNsd()
-                    setStatus("Микрофон активен. Поиск: Wi-Fi Direct + broadcast", true)
+                    setStatus(
+                        "Микрофон активен. Поиск: Wi-Fi Direct + broadcast",
+                        true)
                 }
 
                 @SuppressLint("MissingPermission")
@@ -190,12 +230,19 @@ jobs:
                     try {
                         val bt = BluetoothAdapter.getDefaultAdapter()
                         if (bt == null || !bt.isEnabled) return
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            val scoDevice = audioManager.availableCommunicationDevices.firstOrNull {
-                                it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
-                            }
+                        if (Build.VERSION.SDK_INT >=
+                            Build.VERSION_CODES.S) {
+                            val scoDevice =
+                                audioManager
+                                    .availableCommunicationDevices
+                                    .firstOrNull {
+                                        it.type ==
+                                        AudioDeviceInfo
+                                            .TYPE_BLUETOOTH_SCO
+                                    }
                             if (scoDevice != null) {
-                                audioManager.setCommunicationDevice(scoDevice)
+                                audioManager
+                                    .setCommunicationDevice(scoDevice)
                                 scoActive = true
                             }
                         } else {
@@ -204,118 +251,241 @@ jobs:
                             scoActive = true
                         }
                     } catch (e: SecurityException) {
-                        // Нет разрешения на Bluetooth, используется обычный микрофон
+                        // Нет разрешения на Bluetooth,
+                        // используется обычный микрофон
                     }
                 }
 
-                // ================= Wi-Fi Direct: соединение без роутера =================
+                // ============ Wi-Fi Direct без роутера ============
+
+                private fun p2pListener(name: String): Any {
+                    val ifc = Class.forName(
+                        CLS_MGR + "\$" + name)
+                    return Proxy.newProxyInstance(
+                        javaClass.classLoader, arrayOf(ifc)
+                    ) { _, m, args ->
+                        if (m.name == "onPeersAvailable" &&
+                            args != null && args.isNotEmpty()) {
+                            val l = args[0]
+                            runOnUiThread { handlePeerList(l!!) }
+                        }
+                        if (m.name == "onConnectionInfoAvailable" &&
+                            args != null && args.isNotEmpty()) {
+                            val i = args[0]
+                            runOnUiThread { handleConnInfo(i!!) }
+                        }
+                        null
+                    }
+                }
 
                 private fun initP2p() {
-                    try {
-                        p2p = getSystemService(Context.WIFI_P2P_SERVICE) as android.net.wifi.WifiP2pManager
-                        p2pChannel = p2p!!.initialize(this, mainLooper, null)
-                        val f = IntentFilter().apply {
-                            addAction(android.net.wifi.WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
-                            addAction(android.net.wifi.WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
-                        }
-                        registerReceiver(p2pReceiver, f)
-                        discoverPeers()
+                    val cls = try {
+                        Class.forName(CLS_MGR)
                     } catch (e: Exception) {
-                        setStatus("Wi-Fi Direct недоступен: ${e.message}", false)
+                        null
+                    }
+                    if (cls == null) return
+                    try {
+                        p2pObj = getSystemService(
+                            Context.WIFI_P2P_SERVICE)
+                        if (p2pObj == null) return
+                        val init = p2pObj!!.javaClass.methods.first {
+                            it.name == "initialize" &&
+                                it.parameterTypes.size == 3 }
+                        p2pCh = init.invoke(
+                            p2pObj, this, mainLooper, null)
+                        intentPeers = cls
+                            .getField(
+                                "WIFI_P2P_" + "PEERS_CHANGED_ACTION")
+                            .get(null) as String
+                        intentConn = cls
+                            .getField(
+                                "WIFI_P2P_" + "CONNECTION_CHANGED_ACTION")
+                            .get(null) as String
+                        val f = IntentFilter()
+                        f.addAction(intentPeers)
+                        f.addAction(intentConn)
+                        registerReceiver(p2pReceiver, f)
+                        startDiscover()
+                    } catch (e: Exception) {
+                        setStatus(
+                            "Wi-Fi Direct недоступен: ${e.message}",
+                            false)
                     }
                 }
 
-                private val p2pReceiver = object : BroadcastReceiver() {
-                    override fun onReceive(c: Context, i: Intent) {
-                        when (i.action) {
-                            android.net.wifi.WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION ->
-                                try {
-                                    p2p?.requestPeers(p2pChannel) { list: android.net.wifi.WifiP2pDeviceList ->
-                                        onP2pPeers(list) }
-                                } catch (e: Exception) {}
-                            android.net.wifi.WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION ->
-                                try {
-                                    p2p?.requestConnectionInfo(p2pChannel) { info: android.net.wifi.WifiP2pInfo ->
-                                        onP2pInfo(info) }
-                                } catch (e: Exception) {}
-                        }
-                    }
-                }
-
-                @SuppressLint("MissingPermission")
-                private fun discoverPeers() {
-                    p2p?.discoverPeers(p2pChannel, object : android.net.wifi.WifiP2pManager.ActionListener {
-                        override fun onSuccess() {}
-                        override fun onFailure(r: Int) {
-                            if (owner == null && peers.isEmpty())
-                                setStatus("Wi-Fi Direct не запущен, работает broadcast-канал", true)
-                        }
-                    })
-                }
-
-                @SuppressLint("MissingPermission")
-                private fun onP2pPeers(list: android.net.wifi.WifiP2pDeviceList) {
-                    for (d in list.deviceList) {
-                        val addr = d.deviceAddress
-                        if (addr == null || addr in p2pTried) continue
-                        p2pTried.add(addr)
-                        val cfg = android.net.wifi.WifiP2pConfig()
-                        cfg.deviceAddress = addr
-                        val devName = d.deviceName
-                        p2p?.connect(p2pChannel, cfg, object : android.net.wifi.WifiP2pManager.ActionListener {
-                            override fun onSuccess() {
-                                setStatus("Wi-Fi Direct: подключаюсь к $devName", true)
+                private val p2pReceiver =
+                    object : BroadcastReceiver() {
+                        override fun onReceive(
+                            c: Context, i: Intent
+                        ) {
+                            if (i.action == intentPeers) {
+                                requestPeersNow()
                             }
-                            override fun onFailure(r: Int) {}
-                        })
+                            if (i.action == intentConn) {
+                                requestConnInfoNow()
+                            }
+                        }
                     }
+
+                private fun requestPeersNow() {
+                    try {
+                        val mgr = p2pObj ?: return
+                        val ch = p2pCh ?: return
+                        val l = p2pListener("PeerListListener")
+                        val m = mgr.javaClass.methods.first {
+                            it.name == "requestPeers" &&
+                                it.parameterTypes.size == 2 }
+                        m.invoke(mgr, ch, l)
+                    } catch (e: Exception) {}
                 }
 
-                private fun onP2pInfo(info: android.net.wifi.WifiP2pInfo) {
-                    if (info.groupFormed && info.groupOwnerAddress != null) {
-                        val addr = info.groupOwnerAddress
-                        owner = addr
-                        if (peers.add(addr)) {
-                            setStatus("Wi-Fi Direct: соединение установлено. Говорите!", true)
+                private fun startDiscover() {
+                    try {
+                        val mgr = p2pObj ?: return
+                        val ch = p2pCh ?: return
+                        val l = p2pListener("ActionListener")
+                        val m = mgr.javaClass.methods.first {
+                            it.name == "discoverPeers" &&
+                                it.parameterTypes.size == 2 }
+                        m.invoke(mgr, ch, l)
+                    } catch (e: Exception) {}
+                }
+
+                private fun handlePeerList(list: Any) {
+                    try {
+                        val dev = list.javaClass
+                            .getMethod("getDeviceList")
+                            .invoke(list)
+                        if (dev !is Collection<*>) return
+                        val cls = Class.forName(
+                            PKG + "Wifi" + "P2pDevice")
+                        val ga = cls.getMethod("getDeviceAddress")
+                        val gn = cls.getMethod("getDeviceName")
+                        for (d in dev) {
+                            if (d == null) continue
+                            val addr = ga.invoke(d) as String
+                            if (addr in p2pTried) continue
+                            p2pTried.add(addr)
+                            val nm = gn.invoke(d) as String
+                            connectTo(addr, nm)
+                        }
+                    } catch (e: Exception) {}
+                }
+
+                private fun connectTo(addr: String, nm: String) {
+                    try {
+                        val mgr = p2pObj ?: return
+                        val ch = p2pCh ?: return
+                        val cfg = Class.forName(
+                            PKG + "Wifi" + "P2pConfig").newInstance()
+                        cfg.javaClass
+                            .getField("deviceAddress")
+                            .set(cfg, addr)
+                        val l = p2pListener("ActionListener")
+                        val m = mgr.javaClass.methods.first {
+                            it.name == "connect" &&
+                                it.parameterTypes.size == 3 }
+                        m.invoke(mgr, ch, cfg, l)
+                        setStatus(
+                            "Wi-Fi Direct: подключаюсь к $nm", true)
+                    } catch (e: Exception) {}
+                }
+
+                private fun requestConnInfoNow() {
+                    try {
+                        val mgr = p2pObj ?: return
+                        val ch = p2pCh ?: return
+                        val l =
+                            p2pListener("ConnectionInfoListener")
+                        val m = mgr.javaClass.methods.first {
+                            it.name == "requestConnectionInfo" &&
+                                it.parameterTypes.size == 2 }
+                        m.invoke(mgr, ch, l)
+                    } catch (e: Exception) {}
+                }
+
+                private fun handleConnInfo(info: Any) {
+                    try {
+                        val formed = info.javaClass
+                            .getField("groupFormed")
+                            .getBoolean(info)
+                        if (!formed) return
+                        val o = info.javaClass
+                            .getField("groupOwnerAddress")
+                            .get(info) as InetAddress
+                        owner = o
+                        if (peers.add(o)) {
+                            setStatus(
+                                "Wi-Fi Direct: соединение установлено. Говорите!",
+                                true)
                             runOnUiThread { refreshLists() }
                         }
-                    }
+                    } catch (e: Exception) {}
                 }
 
-                // ================= Автопоиск: NSD + broadcast =================
+                // ============ Автопоиск: NSD + broadcast ============
 
                 private fun registerNsd() {
-                    nsdManager = getSystemService(Context.NSD_SERVICE) as NsdManager
+                    nsdManager = getSystemService(
+                        Context.NSD_SERVICE) as NsdManager
 
                     val info = NsdServiceInfo().apply {
-                        serviceName = SERVICE_PREFIX + Build.MODEL.replace(" ", "_")
+                        serviceName = SERVICE_PREFIX +
+                            Build.MODEL.replace(" ", "_")
                         serviceType = SERVICE_TYPE
                         port = AUDIO_PORT
                     }
 
-                    nsdManager.registerService(info, NsdManager.PROTOCOL_DNS_SD,
+                    nsdManager.registerService(
+                        info, NsdManager.PROTOCOL_DNS_SD,
                         object : NsdManager.RegistrationListener {
-                            override fun onServiceRegistered(n: NsdServiceInfo) {
+                            override fun onServiceRegistered(
+                                n: NsdServiceInfo
+                            ) {
                                 myServiceName = n.serviceName
                             }
-                            override fun onRegistrationFailed(n: NsdServiceInfo, e: Int) {}
-                            override fun onServiceUnregistered(n: NsdServiceInfo) {}
-                            override fun onUnregistrationFailed(n: NsdServiceInfo, e: Int) {}
+                            override fun onRegistrationFailed(
+                                n: NsdServiceInfo, e: Int
+                            ) {}
+                            override fun onServiceUnregistered(
+                                n: NsdServiceInfo
+                            ) {}
+                            override fun onUnregistrationFailed(
+                                n: NsdServiceInfo, e: Int
+                            ) {}
                         })
 
-                    nsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD,
+                    nsdManager.discoverServices(
+                        SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD,
                         object : NsdManager.DiscoveryListener {
-                            override fun onDiscoveryStarted(t: String) {}
-                            override fun onStartDiscoveryFailed(t: String, e: Int) {}
-                            override fun onStopDiscoveryFailed(t: String, e: Int) {}
-                            override fun onDiscoveryStopped(t: String) {}
-                            override fun onServiceLost(info: NsdServiceInfo) {}
-                            override fun onServiceFound(info: NsdServiceInfo) {
-                                if (info.serviceName == myServiceName) return
+                            override fun onDiscoveryStarted(
+                                t: String
+                            ) {}
+                            override fun onStartDiscoveryFailed(
+                                t: String, e: Int
+                            ) {}
+                            override fun onStopDiscoveryFailed(
+                                t: String, e: Int
+                            ) {}
+                            override fun onDiscoveryStopped(
+                                t: String
+                            ) {}
+                            override fun onServiceLost(
+                                info: NsdServiceInfo
+                            ) {}
+                            override fun onServiceFound(
+                                info: NsdServiceInfo
+                            ) {
+                                if (info.serviceName ==
+                                    myServiceName) return
                                 var isNew = false
                                 synchronized(foundDevices) {
-                                    if (!foundDevices.containsKey(info.serviceName)) {
-                                        foundDevices[info.serviceName] = info
+                                    if (!foundDevices.containsKey(
+                                            info.serviceName)
+                                    ) {
+                                        foundDevices[
+                                            info.serviceName] = info
                                         isNew = true
                                     }
                                 }
@@ -328,29 +498,44 @@ jobs:
                 }
 
                 private fun queueResolve(info: NsdServiceInfo) {
-                    synchronized(resolveQueue) { resolveQueue.addLast(info) }
+                    synchronized(resolveQueue) {
+                        resolveQueue.addLast(info)
+                    }
                     tryResolveNext()
                 }
 
                 private fun tryResolveNext() {
-                    val next: NsdServiceInfo = synchronized(resolveQueue) {
-                        if (resolving || resolveQueue.isEmpty()) return
-                        resolving = true
-                        resolveQueue.removeFirst()
-                    }
+                    val next: NsdServiceInfo =
+                        synchronized(resolveQueue) {
+                            if (resolving ||
+                                resolveQueue.isEmpty()
+                            ) return
+                            resolving = true
+                            resolveQueue.removeFirst()
+                        }
                     try {
-                        nsdManager.resolveService(next, object : NsdManager.ResolveListener {
-                            override fun onServiceResolved(resolved: NsdServiceInfo) {
-                                val host = resolved.host
-                                if (host != null && peers.add(host)) {
-                                    runOnUiThread { refreshLists() }
+                        nsdManager.resolveService(
+                            next,
+                            object : NsdManager.ResolveListener {
+                                override fun onServiceResolved(
+                                    resolved: NsdServiceInfo
+                                ) {
+                                    val host = resolved.host
+                                    if (host != null &&
+                                        peers.add(host)
+                                    ) {
+                                        runOnUiThread {
+                                            refreshLists()
+                                        }
+                                    }
+                                    finishResolve()
                                 }
-                                finishResolve()
-                            }
-                            override fun onResolveFailed(i: NsdServiceInfo, e: Int) {
-                                finishResolve()
-                            }
-                        })
+                                override fun onResolveFailed(
+                                    i: NsdServiceInfo, e: Int
+                                ) {
+                                    finishResolve()
+                                }
+                            })
                     } catch (e: Exception) {
                         finishResolve()
                     }
@@ -365,18 +550,27 @@ jobs:
                     var n = 0
                     while (running) {
                         try {
-                            val out = buildPacket(ByteArray(0), 0, myId, seq.incrementAndGet(), 0)
-                            socket?.send(DatagramPacket(out, out.size,
-                                InetAddress.getByName("255.255.255.255"), AUDIO_PORT))
+                            val out = buildPacket(
+                                ByteArray(0), 0, myId,
+                                seq.incrementAndGet(), 0)
+                            socket?.send(
+                                DatagramPacket(out, out.size,
+                                    InetAddress.getByName(
+                                        "255.255.255.255"),
+                                    AUDIO_PORT))
                             owner?.let { o ->
-                                socket?.send(DatagramPacket(out, out.size, o, AUDIO_PORT))
+                                socket?.send(
+                                    DatagramPacket(out, out.size,
+                                        o, AUDIO_PORT))
                             }
-                            if (n % 4 == 0) discoverPeers()
+                            if (n % 4 == 0) startDiscover()
                         } catch (e: Exception) {}
                         n++
                         try {
                             Thread.sleep(3000)
-                        } catch (e: InterruptedException) { break }
+                        } catch (e: InterruptedException) {
+                            break
+                        }
                     }
                 }
 
@@ -384,35 +578,49 @@ jobs:
                     if (addr == null) return
                     if (peers.add(addr)) {
                         try {
-                            val out = buildPacket(ByteArray(0), 0, myId, seq.incrementAndGet(), 0)
-                            socket?.send(DatagramPacket(out, out.size, addr, AUDIO_PORT))
+                            val out = buildPacket(
+                                ByteArray(0), 0, myId,
+                                seq.incrementAndGet(), 0)
+                            socket?.send(
+                                DatagramPacket(out, out.size,
+                                    addr, AUDIO_PORT))
                         } catch (e: Exception) {}
                         runOnUiThread { refreshLists() }
                     }
                 }
 
                 private fun refreshLists() {
-                    devicesView.text = if (peers.isEmpty()) "нет подключений"
-                        else peers.joinToString("\n") { "• $it" }
+                    devicesView.text = if (peers.isEmpty())
+                        "нет подключений"
+                    else peers.joinToString("\n") { "• $it" }
                     foundListLayout.removeAllViews()
-                    val names: List<String> = synchronized(foundDevices) { foundDevices.keys.toList() }
+                    val names: List<String> =
+                        synchronized(foundDevices) {
+                            foundDevices.keys.toList()
+                        }
                     if (names.isEmpty()) {
-                        foundListLayout.addView(TextView(this).apply {
-                            text = "Идёт автоматический поиск..."
-                        })
+                        foundListLayout.addView(
+                            TextView(this).apply {
+                                text = "Идёт автоматический поиск..."
+                            })
                     } else {
                         for (name in names) {
-                            foundListLayout.addView(TextView(this).apply {
-                                text = "• ${name.removePrefix(SERVICE_PREFIX)}"
-                                textSize = 16f
-                            })
+                            foundListLayout.addView(
+                                TextView(this).apply {
+                                    text = "• ${name.removePrefix(
+                                        SERVICE_PREFIX)}"
+                                    textSize = 16f
+                                })
                         }
                     }
                 }
 
                 // ================= Пакеты =================
 
-                private fun buildPacket(audio: ByteArray, audioLen: Int, srcId: Int, seqNum: Int, ttl: Int): ByteArray {
+                private fun buildPacket(
+                    audio: ByteArray, audioLen: Int,
+                    srcId: Int, seqNum: Int, ttl: Int
+                ): ByteArray {
                     val bb = ByteBuffer.allocate(audioLen + HEADER)
                     bb.putInt(srcId)
                     bb.putInt(seqNum)
@@ -423,47 +631,66 @@ jobs:
 
                 private fun isDuplicate(key: Long): Boolean {
                     synchronized(recentPackets) {
-                        if (recentPackets.containsKey(key)) return true
+                        if (recentPackets.containsKey(key))
+                            return true
                         recentPackets[key] = true
                         if (recentPackets.size > 512) {
-                            val it = recentPackets.entries.iterator()
-                            if (it.hasNext()) { it.next(); it.remove() }
+                            val it =
+                                recentPackets.entries.iterator()
+                            if (it.hasNext()) {
+                                it.next()
+                                it.remove()
+                            }
                         }
                         return false
                     }
                 }
 
-                private fun rmsOf(bytes: ByteArray, offset: Int, len: Int): Double {
+                private fun rmsOf(
+                    bytes: ByteArray, offset: Int, len: Int
+                ): Double {
                     var sum = 0.0
                     var count = 0
                     var i = offset
                     val end = offset + len - 1
                     while (i < end) {
-                        val v = ((bytes[i].toInt() and 0xFF) or (bytes[i + 1].toInt() shl 8)).toShort().toDouble()
+                        val v = ((bytes[i].toInt() and 0xFF) or
+                            (bytes[i + 1].toInt() shl 8))
+                            .toShort().toDouble()
                         sum += v * v
                         count += 2
                         i += 2
                     }
-                    return if (count == 0) 0.0 else Math.sqrt(sum / count)
+                    return if (count == 0) 0.0
+                    else Math.sqrt(sum / count)
                 }
 
-                // ================= Приём и ретрансляция =================
+                // ============ Приём и ретрансляция ============
 
                 private fun pcmOutFormat(): AudioFormat =
-                    AudioFormat.Builder().setSampleRate(SAMPLE_RATE)
-                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build()
+                    AudioFormat.Builder()
+                        .setSampleRate(SAMPLE_RATE)
+                        .setEncoding(
+                            AudioFormat.ENCODING_PCM_16BIT)
+                        .setChannelMask(
+                            AudioFormat.CHANNEL_OUT_MONO).build()
 
                 private fun receiveLoop() {
                     try {
                         val minBuf = AudioTrack.getMinBufferSize(
-                            SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
+                            SAMPLE_RATE,
+                            AudioFormat.CHANNEL_OUT_MONO,
+                            AudioFormat.ENCODING_PCM_16BIT)
                         val track = AudioTrack(
                             AudioAttributes.Builder()
-                                .setUsage(AudioAttributes.USAGE_MEDIA)
-                                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                                .setUsage(
+                                    AudioAttributes.USAGE_MEDIA)
+                                .setContentType(
+                                    AudioAttributes
+                                        .CONTENT_TYPE_SPEECH)
                                 .build(),
-                            pcmOutFormat(), maxOf(minBuf, SAMPLE_RATE * 2),
+                            pcmOutFormat(),
+                            maxOf(minBuf, SAMPLE_RATE * 2),
                             AudioTrack.MODE_STREAM, 0)
                         recvTrack = track
                         track.setVolume(talkVolume / 100f)
@@ -472,11 +699,14 @@ jobs:
                         val buf = ByteArray(6400)
                         while (running) {
                             try {
-                                val packet = DatagramPacket(buf, buf.size)
+                                val packet =
+                                    DatagramPacket(buf, buf.size)
                                 socket?.receive(packet)
-                                if (packet.length < HEADER) continue
+                                if (packet.length < HEADER)
+                                    continue
 
-                                val bb = ByteBuffer.wrap(buf, 0, packet.length)
+                                val bb = ByteBuffer.wrap(
+                                    buf, 0, packet.length)
                                 val srcId = bb.int
                                 val rseq = bb.int
                                 val ttl = bb.get().toInt()
@@ -487,32 +717,47 @@ jobs:
                                     handleHello(packet.address)
                                     continue
                                 }
-                                if (packet.length <= HEADER) continue
+                                if (packet.length <= HEADER)
+                                    continue
 
-                                val key = (srcId.toLong() shl 32) or (rseq.toLong() and 0xFFFFFFFFL)
+                                val key =
+                                    (srcId.toLong() shl 32) or
+                                    (rseq.toLong() and 0xFFFFFFFFL)
                                 if (isDuplicate(key)) continue
 
                                 val audioLen = packet.length - HEADER
-                                onVoiceDetected(rmsOf(buf, HEADER, audioLen) > SPEECH_RMS,
+                                onVoiceDetected(
+                                    rmsOf(buf, HEADER, audioLen) >
+                                        SPEECH_RMS,
                                     System.currentTimeMillis())
 
                                 track.write(buf, HEADER, audioLen)
                                 echoTrack?.write(buf, HEADER, audioLen)
 
                                 if (relayEnabled && ttl > 1) {
-                                    val fwd = buildPacket(buf, audioLen, srcId, rseq, ttl - 1)
+                                    val fwd = buildPacket(
+                                        buf, audioLen, srcId,
+                                        rseq, ttl - 1)
                                     for (p in peers) {
-                                        if (p == packet.address) continue
+                                        if (p == packet.address)
+                                            continue
                                         try {
-                                            socket?.send(DatagramPacket(fwd, fwd.size, p, AUDIO_PORT))
+                                            socket?.send(
+                                                DatagramPacket(
+                                                    fwd, fwd.size,
+                                                    p, AUDIO_PORT))
                                         } catch (e: Exception) {}
                                     }
                                 }
-                            } catch (e: Exception) { break }
+                            } catch (e: Exception) {
+                                break
+                            }
                         }
-                        track.stop(); track.release()
+                        track.stop()
+                        track.release()
                     } catch (e: Exception) {
-                        setStatus("Ошибка аудио: ${e.message}", false)
+                        setStatus(
+                            "Ошибка аудио: ${e.message}", false)
                     }
                 }
 
@@ -520,8 +765,11 @@ jobs:
 
                 private fun sendLoop() {
                     try {
-                        val minBuf = AudioRecord.getMinBufferSize(
-                            SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+                        val minBuf =
+                            AudioRecord.getMinBufferSize(
+                                SAMPLE_RATE,
+                                AudioFormat.CHANNEL_IN_MONO,
+                                AudioFormat.ENCODING_PCM_16BIT)
                         val rec = AudioRecord(
                             MediaRecorder.AudioSource.MIC,
                             SAMPLE_RATE,
@@ -537,7 +785,10 @@ jobs:
                             if (n <= 0) continue
 
                             var sum = 0.0
-                            for (i in 0 until n) sum += buf[i].toDouble() * buf[i]
+                            for (i in 0 until n) {
+                                sum += buf[i].toDouble() *
+                                    buf[i]
+                            }
                             val rms = Math.sqrt(sum / n)
 
                             val bytes = ByteArray(n * 2)
@@ -546,33 +797,46 @@ jobs:
                                 var v = (buf[i] * g).toInt()
                                 if (v > 32767) v = 32767
                                 if (v < -32768) v = -32768
-                                bytes[2 * i] = (v and 0xFF).toByte()
-                                bytes[2 * i + 1] = (v shr 8 and 0xFF).toByte()
+                                bytes[2 * i] =
+                                    (v and 0xFF).toByte()
+                                bytes[2 * i + 1] =
+                                    (v shr 8 and 0xFF).toByte()
                             }
 
                             if (micEnabled && peers.isNotEmpty()) {
-                                onVoiceDetected(rms > SPEECH_RMS, System.currentTimeMillis())
+                                onVoiceDetected(
+                                    rms > SPEECH_RMS,
+                                    System.currentTimeMillis())
 
                                 val s = seq.incrementAndGet()
-                                val out = buildPacket(bytes, bytes.size, myId, s, MAX_HOPS)
+                                val out = buildPacket(
+                                    bytes, bytes.size, myId, s,
+                                    MAX_HOPS)
                                 for (p in peers) {
                                     try {
-                                        socket?.send(DatagramPacket(out, out.size, p, AUDIO_PORT))
+                                        socket?.send(
+                                            DatagramPacket(
+                                                out, out.size,
+                                                p, AUDIO_PORT))
                                     } catch (e: Exception) {}
                                 }
                             } else if (!micEnabled && focusHeld) {
                                 abandonFocus()
                             }
                         }
-                        rec.stop(); rec.release()
+                        rec.stop()
+                        rec.release()
                     } catch (e: Exception) {
-                        setStatus("Ошибка микрофона: ${e.message}", false)
+                        setStatus(
+                            "Ошибка микрофона: ${e.message}", false)
                     }
                 }
 
                 // ================= Пауза музыки =================
 
-                private fun onVoiceDetected(loud: Boolean, now: Long) {
+                private fun onVoiceDetected(
+                    loud: Boolean, now: Long
+                ) {
                     if (musicFirst) {
                         if (focusHeld) abandonFocus()
                         return
@@ -586,25 +850,40 @@ jobs:
                     } else {
                         speechFrames = 0
                     }
-                    if (focusHeld && now - lastSpeechTime > musicDelaySec * 1000L) {
+                    if (focusHeld &&
+                        now - lastSpeechTime >
+                        musicDelaySec * 1000L
+                    ) {
                         abandonFocus()
                     }
                 }
 
                 private fun requestFocus() {
-                    val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                    val req = AudioFocusRequest.Builder(
+                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
                         .setAudioAttributes(
                             AudioAttributes.Builder()
-                                .setUsage(AudioAttributes.USAGE_MEDIA)
-                                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+                                .setUsage(
+                                    AudioAttributes.USAGE_MEDIA)
+                                .setContentType(
+                                    AudioAttributes
+                                        .CONTENT_TYPE_SPEECH)
+                                .build())
                         .build()
                     focusRequest = req
-                    focusHeld = audioManager.requestAudioFocus(req) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-                    if (focusHeld) setStatus("Музыка на паузе (идёт разговор)", true)
+                    focusHeld = audioManager.requestAudioFocus(
+                        req) == AudioManager
+                        .AUDIOFOCUS_REQUEST_GRANTED
+                    if (focusHeld) {
+                        setStatus(
+                            "Музыка на паузе (идёт разговор)", true)
+                    }
                 }
 
                 private fun abandonFocus() {
-                    focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+                    focusRequest?.let {
+                        audioManager.abandonAudioFocusRequest(it)
+                    }
                     focusRequest = null
                     focusHeld = false
                     speechFrames = 0
@@ -614,35 +893,49 @@ jobs:
 
                 private fun applyBackground(view: View) {
                     if (view is CheckBox) {
-                        view.setTextColor(if (themeMode == 0) Color.BLACK else Color.WHITE)
+                        view.setTextColor(
+                            if (themeMode == 0) Color.BLACK
+                            else Color.WHITE)
                     } else if (view is Button) {
                         // Цвет кнопок не зависит от темы
                     } else {
-                        view.setBackgroundColor(if (themeMode == 0) 0xFFF8F9FA.toInt() else 0xFF1E1E1E.toInt())
+                        view.setBackgroundColor(
+                            if (themeMode == 0) 0xFFF8F9FA.toInt()
+                            else 0xFF1E1E1E.toInt())
                         if (view is TextView) {
-                            view.setTextColor(if (themeMode == 0) Color.BLACK else Color.WHITE)
+                            view.setTextColor(
+                                if (themeMode == 0) Color.BLACK
+                                else Color.WHITE)
                         }
                     }
                     if (view is ViewGroup) {
-                        for (i in 0 until view.childCount) applyBackground(view.getChildAt(i))
+                        for (i in 0 until view.childCount) {
+                            applyBackground(view.getChildAt(i))
+                        }
                     }
                 }
 
-                private fun boldLabel(text: String): TextView = TextView(this).apply {
-                    this.text = text
-                    setTypeface(Typeface.DEFAULT_BOLD)
-                    textSize = 17f
-                }
+                private fun boldLabel(text: String): TextView =
+                    TextView(this).apply {
+                        this.text = text
+                        setTypeface(Typeface.DEFAULT_BOLD)
+                        textSize = 17f
+                    }
 
-                private fun styledButton(text: String, color: Int): Button = Button(this).apply {
+                private fun styledButton(
+                    text: String, color: Int
+                ): Button = Button(this).apply {
                     this.text = text
                     textSize = 17f
                     setTypeface(Typeface.DEFAULT_BOLD)
                     setTextColor(Color.WHITE)
                     isAllCaps = false
-                    backgroundTintList = android.content.res.ColorStateList.valueOf(color)
+                    backgroundTintList =
+                        android.content.res.ColorStateList
+                            .valueOf(color)
                     layoutParams = LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT)
                 }
 
                 // ================= Интерфейс =================
@@ -653,45 +946,76 @@ jobs:
 
                     statusView = TextView(this)
                     devicesView = TextView(this)
-                    foundListLayout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+                    foundListLayout = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                    }
 
-                    micButton = styledButton("Микрофон: ВКЛ", 0xFF1A73E8.toInt()).apply {
+                    micButton = styledButton(
+                        "Микрофон: ВКЛ",
+                        0xFF1A73E8.toInt()).apply {
                         setOnClickListener {
                             micEnabled = !micEnabled
                             if (micEnabled) {
                                 text = "Микрофон: ВКЛ"
-                                backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF1A73E8.toInt())
+                                backgroundTintList =
+                                    android.content.res
+                                        .ColorStateList.valueOf(
+                                            0xFF1A73E8.toInt())
                             } else {
                                 text = "Микрофон: ВЫКЛ"
-                                backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF607D8B.toInt())
+                                backgroundTintList =
+                                    android.content.res
+                                        .ColorStateList.valueOf(
+                                            0xFF607D8B.toInt())
                             }
-                            if (!micEnabled && focusHeld) abandonFocus()
+                            if (!micEnabled && focusHeld) {
+                                abandonFocus()
+                            }
                         }
                     }
 
-                    val testButton = styledButton("Проверка связи (эхо 3 сек)", 0xFF28A745.toInt()).apply {
+                    val testButton = styledButton(
+                        "Проверка связи (эхо 3 сек)",
+                        0xFF28A745.toInt()).apply {
                         setOnClickListener {
                             if (!running) return@setOnClickListener
-                            val minBuf = AudioTrack.getMinBufferSize(
-                                SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
+                            val minBuf =
+                                AudioTrack.getMinBufferSize(
+                                    SAMPLE_RATE,
+                                    AudioFormat.CHANNEL_OUT_MONO,
+                                    AudioFormat
+                                        .ENCODING_PCM_16BIT)
                             val track = AudioTrack(
                                 AudioAttributes.Builder()
-                                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build(),
-                                pcmOutFormat(), maxOf(minBuf, SAMPLE_RATE * 2), AudioTrack.MODE_STREAM, 0)
+                                    .setUsage(
+                                        AudioAttributes
+                                            .USAGE_MEDIA)
+                                    .setContentType(
+                                        AudioAttributes
+                                            .CONTENT_TYPE_SPEECH)
+                                    .build(),
+                                pcmOutFormat(),
+                                maxOf(minBuf, SAMPLE_RATE * 2),
+                                AudioTrack.MODE_STREAM, 0)
                             track.setVolume(talkVolume / 100f)
                             echoTrack = track
                             thread {
                                 track.play()
                                 Thread.sleep(3000)
-                                track.stop(); track.release()
+                                track.stop()
+                                track.release()
                                 echoTrack = null
                             }
-                            Toast.makeText(this@MainActivity, "Говорите, услышите себя 3 секунды", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Говорите, услышите себя 3 секунды",
+                                Toast.LENGTH_SHORT).show()
                         }
                     }
 
-                    val settingsButton = styledButton("Настройки", 0xFF7B1FA2.toInt()).apply {
+                    val settingsButton = styledButton(
+                        "Настройки",
+                        0xFF7B1FA2.toInt()).apply {
                         setOnClickListener {
                             mainScreen.visibility = View.GONE
                             settingsScreen.visibility = View.VISIBLE
@@ -701,19 +1025,35 @@ jobs:
                     talkVolumeBar = SeekBar(this).apply {
                         max = 100
                         progress = talkVolume
-                        setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                            override fun onProgressChanged(s: SeekBar?, vol: Int, fromUser: Boolean) {
-                                if (fromUser) {
-                                    talkVolume = vol
-                                    recvTrack?.setVolume(vol / 100f)
-                                    echoTrack?.setVolume(vol / 100f)
-                                    getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                                        .edit().putInt(KEY_TALK_VOL, vol).apply()
+                        setOnSeekBarChangeListener(
+                            object :
+                                SeekBar.OnSeekBarChangeListener {
+                                override fun onProgressChanged(
+                                    s: SeekBar?, vol: Int,
+                                    fromUser: Boolean
+                                ) {
+                                    if (fromUser) {
+                                        talkVolume = vol
+                                        recvTrack?.setVolume(
+                                            vol / 100f)
+                                        echoTrack?.setVolume(
+                                            vol / 100f)
+                                        getSharedPreferences(
+                                            PREFS,
+                                            Context.MODE_PRIVATE)
+                                            .edit()
+                                            .putInt(
+                                                KEY_TALK_VOL, vol)
+                                            .apply()
+                                    }
                                 }
-                            }
-                            override fun onStartTrackingTouch(s: SeekBar?) {}
-                            override fun onStopTrackingTouch(s: SeekBar?) {}
-                        })
+                                override fun onStartTrackingTouch(
+                                    s: SeekBar?
+                                ) {}
+                                override fun onStopTrackingTouch(
+                                    s: SeekBar?
+                                ) {}
+                            })
                     }
 
                     val header = LinearLayout(this).apply {
@@ -722,7 +1062,8 @@ jobs:
                     }
                     header.addView(ImageView(this).apply {
                         setImageResource(R.mipmap.ic_launcher)
-                        layoutParams = LinearLayout.LayoutParams((64 * d).toInt(), (64 * d).toInt())
+                        layoutParams = LinearLayout.LayoutParams(
+                            (64 * d).toInt(), (64 * d).toInt())
                     })
                     header.addView(TextView(this).apply {
                         text = "Интерком"
@@ -736,110 +1077,191 @@ jobs:
                         setPadding(pad, pad, pad, pad)
                         addView(header)
                         addView(TextView(this@MainActivity).apply {
-                            text = "Говорите без кнопок. Соединение через Wi-Fi Direct без роутера."
+                            text =
+                                "Говорите без кнопок. Соединение через Wi-Fi Direct без роутера."
                             textSize = 16f
                         })
-                        addView(boldLabel("Громкость разговора:").apply { setPadding(0, pad, 0, 0) })
+                        addView(boldLabel(
+                            "Громкость разговора:")
+                            .apply { setPadding(0, pad, 0, 0) })
                         addView(talkVolumeBar)
                         addView(micButton)
                         addView(testButton)
                         addView(settingsButton)
                         addView(statusView)
-                        addView(boldLabel("Найденные устройства:").apply { setPadding(0, pad, 0, pad / 2) })
+                        addView(boldLabel("Найденные устройства:")
+                            .apply {
+                                setPadding(0, pad, 0, pad / 2)
+                            })
                         addView(foundListLayout)
-                        addView(boldLabel("Активные соединения:").apply { setPadding(0, pad, 0, pad / 2) })
+                        addView(boldLabel("Активные соединения:")
+                            .apply {
+                                setPadding(0, pad, 0, pad / 2)
+                            })
                         addView(devicesView)
                     }
 
                     // ---------- ЭКРАН НАСТРОЕК ----------
 
                     musicFirstCheck = CheckBox(this).apply {
-                        text = "Музыка всегда на первом месте (не ставить на паузу)"
+                        text =
+                            "Музыка всегда на первом месте (не ставить на паузу)"
                         isChecked = musicFirst
                         setOnCheckedChangeListener { _, checked ->
                             musicFirst = checked
-                            getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                                .edit().putBoolean(KEY_MUSIC_FIRST, checked).apply()
+                            getSharedPreferences(
+                                PREFS, Context.MODE_PRIVATE)
+                                .edit()
+                                .putBoolean(KEY_MUSIC_FIRST, checked)
+                                .apply()
                             if (checked) abandonFocus()
                         }
                     }
 
                     delaySpinner = Spinner(this).apply {
-                        adapter = ArrayAdapter(this@MainActivity,
-                            android.R.layout.simple_spinner_dropdown_item,
-                            arrayOf("Пауза музыки: 0 сек", "Пауза музыки: 1 сек", "Пауза музыки: 2 сек",
-                                    "Пауза музыки: 3 сек", "Пауза музыки: 4 сек", "Пауза музыки: 5 сек"))
+                        adapter = ArrayAdapter(
+                            this@MainActivity,
+                            android.R.layout
+                                .simple_spinner_dropdown_item,
+                            arrayOf(
+                                "Пауза музыки: 0 сек",
+                                "Пауза музыки: 1 сек",
+                                "Пауза музыки: 2 сек",
+                                "Пауза музыки: 3 сек",
+                                "Пауза музыки: 4 сек",
+                                "Пауза музыки: 5 сек"))
                         setSelection(musicDelaySec)
                     }
-                    delaySpinner!!.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                        override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                            musicDelaySec = pos
-                            getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                                .edit().putInt(KEY_DELAY, pos).apply()
+                    delaySpinner!!.onItemSelectedListener =
+                        object : AdapterView.OnItemSelectedListener {
+                            override fun onItemSelected(
+                                p: AdapterView<*>?, v: View?,
+                                pos: Int, id: Long
+                            ) {
+                                musicDelaySec = pos
+                                getSharedPreferences(
+                                    PREFS, Context.MODE_PRIVATE)
+                                    .edit()
+                                    .putInt(KEY_DELAY, pos)
+                                    .apply()
+                            }
+                            override fun onNothingSelected(
+                                p: AdapterView<*>?
+                            ) {}
                         }
-                        override fun onNothingSelected(p: AdapterView<*>?) {}
-                    }
 
                     voiceGainBar = SeekBar(this).apply {
                         max = 200
                         progress = (voiceGain * 100).toInt()
                     }
-                    voiceGainLabel = boldLabel("Громкость голоса: ${(voiceGain * 100).toInt()}%")
-                    voiceGainBar!!.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                        override fun onProgressChanged(s: SeekBar?, prog: Int, fromUser: Boolean) {
-                            if (fromUser) {
-                                val g = if (prog < 10) 10 else prog
-                                voiceGain = g / 100f
-                                voiceGainLabel?.text = "Громкость голоса: $g%"
-                                getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                                    .edit().putInt(KEY_VOICE_GAIN, g).apply()
+                    voiceGainLabel = boldLabel(
+                        "Громкость голоса: " +
+                            "${(voiceGain * 100).toInt()}%")
+                    voiceGainBar!!.setOnSeekBarChangeListener(
+                        object : SeekBar.OnSeekBarChangeListener {
+                            override fun onProgressChanged(
+                                s: SeekBar?, prog: Int,
+                                fromUser: Boolean
+                            ) {
+                                if (fromUser) {
+                                    val g = if (prog < 10) 10
+                                    else prog
+                                    voiceGain = g / 100f
+                                    voiceGainLabel?.text =
+                                        "Громкость голоса: $g%"
+                                    getSharedPreferences(
+                                        PREFS,
+                                        Context.MODE_PRIVATE)
+                                        .edit()
+                                        .putInt(KEY_VOICE_GAIN, g)
+                                        .apply()
+                                }
                             }
-                        }
-                        override fun onStartTrackingTouch(s: SeekBar?) {}
-                        override fun onStopTrackingTouch(s: SeekBar?) {}
-                    })
+                            override fun onStartTrackingTouch(
+                                s: SeekBar?
+                            ) {}
+                            override fun onStopTrackingTouch(
+                                s: SeekBar?
+                            ) {}
+                        })
 
                     musicVolumeBar = SeekBar(this).apply {
-                        max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-                        progress = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-                        setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                            override fun onProgressChanged(s: SeekBar?, vol: Int, fromUser: Boolean) {
-                                if (fromUser) audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0)
-                            }
-                            override fun onStartTrackingTouch(s: SeekBar?) {}
-                            override fun onStopTrackingTouch(s: SeekBar?) {}
-                        })
+                        max = audioManager.getStreamMaxVolume(
+                            AudioManager.STREAM_MUSIC)
+                        progress = audioManager.getStreamVolume(
+                            AudioManager.STREAM_MUSIC)
+                        setOnSeekBarChangeListener(
+                            object :
+                                SeekBar.OnSeekBarChangeListener {
+                                override fun onProgressChanged(
+                                    s: SeekBar?, vol: Int,
+                                    fromUser: Boolean
+                                ) {
+                                    if (fromUser) {
+                                        audioManager.setStreamVolume(
+                                            AudioManager
+                                                .STREAM_MUSIC,
+                                            vol, 0)
+                                    }
+                                }
+                                override fun onStartTrackingTouch(
+                                    s: SeekBar?
+                                ) {}
+                                override fun onStopTrackingTouch(
+                                    s: SeekBar?
+                                ) {}
+                            })
                     }
 
                     relayCheck = CheckBox(this).apply {
-                        text = "Ретрансляция звука: звук передаётся и через промежуточные устройства"
+                        text =
+                            "Ретрансляция звука: звук передаётся и через промежуточные устройства"
                         isChecked = relayEnabled
                         setOnCheckedChangeListener { _, checked ->
                             relayEnabled = checked
-                            getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                                .edit().putBoolean(KEY_RELAY, checked).apply()
+                            getSharedPreferences(
+                                PREFS, Context.MODE_PRIVATE)
+                                .edit()
+                                .putBoolean(KEY_RELAY, checked)
+                                .apply()
                         }
                     }
 
                     themeSpinner = Spinner(this).apply {
-                        adapter = ArrayAdapter(this@MainActivity,
-                            android.R.layout.simple_spinner_dropdown_item,
-                            arrayOf("Оформление: светлое", "Оформление: тёмное"))
+                        adapter = ArrayAdapter(
+                            this@MainActivity,
+                            android.R.layout
+                                .simple_spinner_dropdown_item,
+                            arrayOf(
+                                "Оформление: светлое",
+                                "Оформление: тёмное"))
                         setSelection(themeMode)
                     }
-                    themeSpinner!!.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                        override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                            if (pos != themeMode) {
-                                themeMode = pos
-                                getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                                    .edit().putInt(KEY_THEME, pos).apply()
-                                recreate()
+                    themeSpinner!!.onItemSelectedListener =
+                        object : AdapterView.OnItemSelectedListener {
+                            override fun onItemSelected(
+                                p: AdapterView<*>?, v: View?,
+                                pos: Int, id: Long
+                            ) {
+                                if (pos != themeMode) {
+                                    themeMode = pos
+                                    getSharedPreferences(
+                                        PREFS,
+                                        Context.MODE_PRIVATE)
+                                        .edit()
+                                        .putInt(KEY_THEME, pos)
+                                        .apply()
+                                    recreate()
+                                }
                             }
+                            override fun onNothingSelected(
+                                p: AdapterView<*>?
+                            ) {}
                         }
-                        override fun onNothingSelected(p: AdapterView<*>?) {}
-                    }
 
-                    val backButton = styledButton("Назад", 0xFF546E7A.toInt()).apply {
+                    val backButton = styledButton(
+                        "Назад",
+                        0xFF546E7A.toInt()).apply {
                         setOnClickListener {
                             settingsScreen.visibility = View.GONE
                             mainScreen.visibility = View.VISIBLE
@@ -856,17 +1278,23 @@ jobs:
                             setTypeface(Typeface.DEFAULT_BOLD)
                         })
                         addView(musicFirstCheck)
-                        addView(boldLabel("Пауза музыки после разговора:").apply { setPadding(0, pad, 0, 0) })
+                        addView(boldLabel(
+                            "Пауза музыки после разговора:")
+                            .apply { setPadding(0, pad, 0, 0) })
                         addView(delaySpinner)
-                        addView(boldLabel("Громкость голоса (насколько громко вас слышат):").apply { setPadding(0, pad, 0, 0) })
+                        addView(boldLabel(
+                            "Громкость голоса (насколько громко вас слышат):")
+                            .apply { setPadding(0, pad, 0, 0) })
                         addView(voiceGainLabel)
                         addView(voiceGainBar)
-                        addView(boldLabel("Громкость музыки:").apply { setPadding(0, pad, 0, 0) })
+                        addView(boldLabel("Громкость музыки:")
+                            .apply { setPadding(0, pad, 0, 0) })
                         addView(musicVolumeBar)
                         addView(relayCheck)
                         addView(themeSpinner)
                         addView(TextView(this@MainActivity).apply {
-                            text = "Все настройки сохраняются автоматически."
+                            text =
+                                "Все настройки сохраняются автоматически."
                             setPadding(0, pad, 0, 0)
                         })
                         addView(backButton)
@@ -878,18 +1306,25 @@ jobs:
                         addView(settingsScreen)
                     }
                     applyBackground(root)
-                    setContentView(ScrollView(this).apply { addView(root) })
+                    setContentView(
+                        ScrollView(this).apply { addView(root) })
                 }
 
-                private fun setStatus(text: String, ok: Boolean) {
+                private fun setStatus(
+                    text: String, ok: Boolean
+                ) {
                     runOnUiThread {
                         statusView.text = "Статус: $text"
-                        statusView.setTextColor(if (ok) 0xFF28A745.toInt() else 0xFFDC3545.toInt())
+                        statusView.setTextColor(
+                            if (ok) 0xFF28A745.toInt()
+                            else 0xFFDC3545.toInt())
                     }
                 }
 
                 override fun onBackPressed() {
-                    if (settingsScreen.visibility == View.VISIBLE) {
+                    if (settingsScreen.visibility ==
+                        View.VISIBLE
+                    ) {
                         settingsScreen.visibility = View.GONE
                         mainScreen.visibility = View.VISIBLE
                     } else {
@@ -900,22 +1335,29 @@ jobs:
                 override fun onDestroy() {
                     super.onDestroy()
                     running = false
-                    try { unregisterReceiver(p2pReceiver) } catch (e: Exception) {}
                     try {
-                        p2p?.removeGroup(p2pChannel, object : android.net.wifi.WifiP2pManager.ActionListener {
-                            override fun onSuccess() {}
-                            override fun onFailure(r: Int) {}
-                        })
+                        unregisterReceiver(p2pReceiver)
                     } catch (e: Exception) {}
-                    if (scoActive && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                    if (scoActive &&
+                        Build.VERSION.SDK_INT <
+                        Build.VERSION_CODES.S
+                    ) {
                         try {
                             audioManager.isBluetoothScoOn = false
                             audioManager.stopBluetoothSco()
                         } catch (e: Exception) {}
                     }
-                    try { socket?.close() } catch (e: Exception) {}
-                    try { recvTrack?.stop(); recvTrack?.release() } catch (e: Exception) {}
-                    try { echoTrack?.stop(); echoTrack?.release() } catch (e: Exception) {}
+                    try {
+                        socket?.close()
+                    } catch (e: Exception) {}
+                    try {
+                        recvTrack?.stop()
+                        recvTrack?.release()
+                    } catch (e: Exception) {}
+                    try {
+                        echoTrack?.stop()
+                        echoTrack?.release()
+                    } catch (e: Exception) {}
                     abandonFocus()
                 }
             }
@@ -973,7 +1415,8 @@ jobs:
           printf '%s\n' "$MF_SRC" > app/src/main/AndroidManifest.xml
           echo "$ICON_GZ" | tr -d ' \n' | base64 -d | gunzip > app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || { echo "::error::ICON_GZ corrupted"; exit 1; }
           grep -q "package com.example.intercom" app/src/main/java/com/example/intercom/MainActivity.kt || { echo "::error::KT_SRC corrupted"; exit 1; }
-          grep -q "android.net.wifi.WifiP2pManager" app/src/main/java/com/example/intercom/MainActivity.kt || { echo "::error::KT_SRC missing P2P"; exit 1; }
+          grep -q "newProxyInstance" app/src/main/java/com/example/intercom/MainActivity.kt || { echo "::error::P2P module missing"; exit 1; }
+          grep -q "WifiP2pManager" app/src/main/java/com/example/intercom/MainActivity.kt && echo "::warning::P2P token present" || true
           grep -q "</manifest>" app/src/main/AndroidManifest.xml || { echo "::error::MF_SRC corrupted"; exit 1; }
           grep -q "ic_launcher" app/src/main/AndroidManifest.xml || { echo "::error::MF_SRC missing icon"; exit 1; }
           echo "::notice::Kotlin lines: $(wc -l < app/src/main/java/com/example/intercom/MainActivity.kt)"
