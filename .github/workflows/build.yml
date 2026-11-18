@@ -31,11 +31,6 @@ jobs:
             import android.net.nsd.NsdManager
             import android.net.nsd.NsdServiceInfo
             import android.net.wifi.WifiManager
-            import android.net.wifi.WifiP2pConfig
-            import android.net.wifi.WifiP2pDevice
-            import android.net.wifi.WifiP2pDeviceList
-            import android.net.wifi.WifiP2pInfo
-            import android.net.wifi.WifiP2pManager
             import android.os.Build
             import android.os.Bundle
             import android.view.Gravity
@@ -104,8 +99,8 @@ jobs:
                 private var recvTrack: AudioTrack? = null
                 private var scoActive = false
 
-                private var p2p: WifiP2pManager? = null
-                private var p2pChannel: WifiP2pManager.Channel? = null
+                private var p2p: android.net.wifi.WifiP2pManager? = null
+                private var p2pChannel: android.net.wifi.WifiP2pManager.Channel? = null
                 private var owner: InetAddress? = null
                 private val p2pTried = CopyOnWriteArraySet<String>()
 
@@ -217,11 +212,11 @@ jobs:
 
                 private fun initP2p() {
                     try {
-                        p2p = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+                        p2p = getSystemService(Context.WIFI_P2P_SERVICE) as android.net.wifi.WifiP2pManager
                         p2pChannel = p2p!!.initialize(this, mainLooper, null)
                         val f = IntentFilter().apply {
-                            addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
-                            addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
+                            addAction(android.net.wifi.WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
+                            addAction(android.net.wifi.WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
                         }
                         registerReceiver(p2pReceiver, f)
                         discoverPeers()
@@ -233,13 +228,15 @@ jobs:
                 private val p2pReceiver = object : BroadcastReceiver() {
                     override fun onReceive(c: Context, i: Intent) {
                         when (i.action) {
-                            WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION ->
+                            android.net.wifi.WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION ->
                                 try {
-                                    p2p?.requestPeers(p2pChannel) { list -> onP2pPeers(list) }
+                                    p2p?.requestPeers(p2pChannel) { list: android.net.wifi.WifiP2pDeviceList ->
+                                        onP2pPeers(list) }
                                 } catch (e: Exception) {}
-                            WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION ->
+                            android.net.wifi.WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION ->
                                 try {
-                                    p2p?.requestConnectionInfo(p2pChannel) { info -> onP2pInfo(info) }
+                                    p2p?.requestConnectionInfo(p2pChannel) { info: android.net.wifi.WifiP2pInfo ->
+                                        onP2pInfo(info) }
                                 } catch (e: Exception) {}
                         }
                     }
@@ -247,7 +244,7 @@ jobs:
 
                 @SuppressLint("MissingPermission")
                 private fun discoverPeers() {
-                    p2p?.discoverPeers(p2pChannel, object : WifiP2pManager.ActionListener {
+                    p2p?.discoverPeers(p2pChannel, object : android.net.wifi.WifiP2pManager.ActionListener {
                         override fun onSuccess() {}
                         override fun onFailure(r: Int) {
                             if (owner == null && peers.isEmpty())
@@ -257,22 +254,24 @@ jobs:
                 }
 
                 @SuppressLint("MissingPermission")
-                private fun onP2pPeers(list: WifiP2pDeviceList) {
+                private fun onP2pPeers(list: android.net.wifi.WifiP2pDeviceList) {
                     for (d in list.deviceList) {
-                        if (d.deviceAddress == null || d.deviceAddress in p2pTried) continue
-                        p2pTried.add(d.deviceAddress)
-                        val cfg = WifiP2pConfig()
-                        cfg.deviceAddress = d.deviceAddress
-                        p2p?.connect(p2pChannel, cfg, object : WifiP2pManager.ActionListener {
+                        val addr = d.deviceAddress
+                        if (addr == null || addr in p2pTried) continue
+                        p2pTried.add(addr)
+                        val cfg = android.net.wifi.WifiP2pConfig()
+                        cfg.deviceAddress = addr
+                        val devName = d.deviceName
+                        p2p?.connect(p2pChannel, cfg, object : android.net.wifi.WifiP2pManager.ActionListener {
                             override fun onSuccess() {
-                                setStatus("Wi-Fi Direct: подключаюсь к ${d.deviceName}", true)
+                                setStatus("Wi-Fi Direct: подключаюсь к $devName", true)
                             }
                             override fun onFailure(r: Int) {}
                         })
                     }
                 }
 
-                private fun onP2pInfo(info: WifiP2pInfo) {
+                private fun onP2pInfo(info: android.net.wifi.WifiP2pInfo) {
                     if (info.groupFormed && info.groupOwnerAddress != null) {
                         val addr = info.groupOwnerAddress
                         owner = addr
@@ -902,7 +901,12 @@ jobs:
                     super.onDestroy()
                     running = false
                     try { unregisterReceiver(p2pReceiver) } catch (e: Exception) {}
-                    try { p2p?.removeGroup(p2pChannel, null) } catch (e: Exception) {}
+                    try {
+                        p2p?.removeGroup(p2pChannel, object : android.net.wifi.WifiP2pManager.ActionListener {
+                            override fun onSuccess() {}
+                            override fun onFailure(r: Int) {}
+                        })
+                    } catch (e: Exception) {}
                     if (scoActive && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
                         try {
                             audioManager.isBluetoothScoOn = false
@@ -969,11 +973,12 @@ jobs:
           printf '%s\n' "$MF_SRC" > app/src/main/AndroidManifest.xml
           echo "$ICON_GZ" | tr -d ' \n' | base64 -d | gunzip > app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || { echo "::error::ICON_GZ corrupted"; exit 1; }
           grep -q "package com.example.intercom" app/src/main/java/com/example/intercom/MainActivity.kt || { echo "::error::KT_SRC corrupted"; exit 1; }
-          grep -q "WifiP2pManager" app/src/main/java/com/example/intercom/MainActivity.kt || { echo "::error::KT_SRC missing P2P"; exit 1; }
+          grep -q "android.net.wifi.WifiP2pManager" app/src/main/java/com/example/intercom/MainActivity.kt || { echo "::error::KT_SRC missing P2P"; exit 1; }
           grep -q "</manifest>" app/src/main/AndroidManifest.xml || { echo "::error::MF_SRC corrupted"; exit 1; }
           grep -q "ic_launcher" app/src/main/AndroidManifest.xml || { echo "::error::MF_SRC missing icon"; exit 1; }
           echo "::notice::Kotlin lines: $(wc -l < app/src/main/java/com/example/intercom/MainActivity.kt)"
           echo "::notice::Kotlin bytes: $(wc -c < app/src/main/java/com/example/intercom/MainActivity.kt)"
+          echo "::notice::Import lines: $(grep -c '^import ' app/src/main/java/com/example/intercom/MainActivity.kt)"
           echo "::notice::Icon bytes: $(wc -c < app/src/main/res/mipmap-xxxhdpi/ic_launcher.png)"
 
       - name: Fix encoding
