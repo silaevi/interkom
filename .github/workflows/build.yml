@@ -11,17 +11,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Version check
+      - name: File check
         run: |
           FILE=app/src/main/java/com/example/intercom/MainActivity.kt
-          LINES=$(wc -l < "$FILE")
-          RU=$(grep -c "Интерком" "$FILE" || true)
-          DELAY=$(grep -c "Пауза музыки" "$FILE" || true)
-          LAST=$(tail -1 "$FILE")
-          echo "::notice::Kotlin file lines: $LINES"
-          echo "::notice::Russian title found (1 = yes): $RU"
-          echo "::notice::Delay setting found (1 = yes): $DELAY"
-          echo "::notice::Last line: ${LAST:0:120}"
+          echo "::notice::Lines in MainActivity.kt: $(wc -l < "$FILE")"
+          echo "::notice::Russian title present: $(grep -c 'Интерком' "$FILE")"
+          echo "::notice::Russian settings present: $(grep -c 'Пауза музыки' "$FILE")"
 
       - name: Write manifest
         run: |
@@ -36,7 +31,7 @@ jobs:
               <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
               <application
                   android:allowBackup="true"
-                  android:label="Intercom">
+                  android:label="Интерком">
                   <activity
                       android:name=".MainActivity"
                       android:exported="true">
