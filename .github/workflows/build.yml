@@ -11,6 +11,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Version check
+        run: |
+          FILE=app/src/main/java/com/example/intercom/MainActivity.kt
+          LINES=$(wc -l < "$FILE")
+          RU=$(grep -c "Интерком" "$FILE" || true)
+          DELAY=$(grep -c "Пауза музыки" "$FILE" || true)
+          LAST=$(tail -1 "$FILE")
+          echo "::notice::Kotlin file lines: $LINES"
+          echo "::notice::Russian title found (1 = yes): $RU"
+          echo "::notice::Delay setting found (1 = yes): $DELAY"
+          echo "::notice::Last line: ${LAST:0:120}"
+
       - name: Write manifest
         run: |
           cat > app/src/main/AndroidManifest.xml <<'MANIFEST_EOF'
@@ -36,15 +48,6 @@ jobs:
               </application>
           </manifest>
           MANIFEST_EOF
-          echo "::notice::Manifest written: $(wc -l < app/src/main/AndroidManifest.xml) lines"
-
-      - name: Check sources
-        run: |
-          FILE=app/src/main/java/com/example/intercom/MainActivity.kt
-          echo "::notice::Kotlin file has $(wc -l < $FILE) lines"
-          tail -3 "$FILE" | while IFS= read -r line; do
-            echo "::notice::TAIL: ${line:0:200}"
-          done
 
       - name: Setup Java 17
         uses: actions/setup-java@v6
