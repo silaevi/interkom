@@ -11,12 +11,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: File check
+      - name: Diagnose
         run: |
           FILE=app/src/main/java/com/example/intercom/MainActivity.kt
-          echo "::notice::Lines in MainActivity.kt: $(wc -l < "$FILE")"
-          echo "::notice::Russian title present: $(grep -c 'Интерком' "$FILE")"
-          echo "::notice::Russian settings present: $(grep -c 'Пауза музыки' "$FILE")"
+          echo "::notice::Total lines: $(wc -l < "$FILE")"
+          echo "::notice::Top-level closing braces (should be only the last line):"
+          grep -n '^}' "$FILE" | while IFS= read -r line; do
+            echo "::notice::TOPBRACE: ${line:0:150}"
+          done
+          echo "::notice::Fragment 380-430:"
+          sed -n '380,430p' "$FILE" | while IFS= read -r line; do
+            echo "::notice::L: ${line:0:150}"
+          done
 
       - name: Write manifest
         run: |
