@@ -1448,12 +1448,8 @@ jobs:
           printf '%s\n' "$KT_SRC" > app/src/main/java/com/example/intercom/MainActivity.kt
           printf '%s\n' "$MF_SRC" > app/src/main/AndroidManifest.xml
           mkdir -p app/src/main/res/mipmap
-          if ! printf '%s' "$ICON_B64" | base64 -d > app/src/main/res/mipmap/ic_launcher.png 2>/tmp/icon_err; then
-            echo "ОШИБКА ИКОНКИ: $(cat /tmp/icon_err)"
-            exit 1
-          fi
-          echo "Файлы записаны:"
-          ls -l app/src/main/java/com/example/intercom/MainActivity.kt app/src/main/AndroidManifest.xml app/src/main/res/mipmap/ic_launcher.png
+          printf '%s' "$ICON_B64" | base64 -d > app/src/main/res/mipmap/ic_launcher.png
+          echo "Файлы записаны"
 
       - name: Create project files
         run: |
@@ -1512,7 +1508,6 @@ jobs:
           }
           EOF
           echo "Gradle-файлы созданы"
-          ls -l settings.gradle build.gradle app/build.gradle
 
       - name: Build APK
         run: |
