@@ -9,11 +9,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Write sources
         env:
           KT_SRC: |
+
             package com.example.intercom
 
             import android.Manifest
@@ -91,6 +101,7 @@ jobs:
                 private var voiceGain = 1.0f
                 private var talkVolume = 100
                 private var speechFrames = 0
+                private var lastSearchTime = 0L
 
                 private val recentPackets =
                     LinkedHashMap<Long, Boolean>()
@@ -615,6 +626,38 @@ jobs:
                     }
                 }
 
+                private fun manualSearch() {
+                    if (!running) {
+                        setStatus("Поиск недоступен: приложение ещё не запущено", false)
+                        return
+                    }
+                    val now = System.currentTimeMillis()
+                    if (now - lastSearchTime < 3000) {
+                        setStatus("Поиск уже запущен, подождите пару секунд", false)
+                        return
+                    }
+                    lastSearchTime = now
+                    startDiscover()
+                    try {
+                        val out = buildPacket(
+                            ByteArray(0), 0, myId,
+                            seq.incrementAndGet(), 0)
+                        socket?.send(
+                            DatagramPacket(out, out.size,
+                                InetAddress.getByName("255.255.255.255"),
+                                AUDIO_PORT))
+                        owner?.let { o ->
+                            socket?.send(
+                                DatagramPacket(out, out.size, o, AUDIO_PORT))
+                        }
+                    } catch (e: Exception) {}
+                    synchronized(foundDevices) { foundDevices.clear() }
+                    resolveQueue.clear()
+                    p2pTried.clear()
+                    runOnUiThread { refreshLists() }
+                    setStatus("Поиск устройств запущен", true)
+                }
+
                 // ================= Пакеты =================
 
                 private fun buildPacket(
@@ -1022,6 +1065,12 @@ jobs:
                         }
                     }
 
+                    val searchButton = styledButton(
+                        "Найти устройства",
+                        0xFF0288D1.toInt()).apply {
+                        setOnClickListener { manualSearch() }
+                    }
+
                     talkVolumeBar = SeekBar(this).apply {
                         max = 100
                         progress = talkVolume
@@ -1087,6 +1136,7 @@ jobs:
                         addView(talkVolumeBar)
                         addView(micButton)
                         addView(testButton)
+                        addView(searchButton)
                         addView(settingsButton)
                         addView(statusView)
                         addView(boldLabel("Найденные устройства:")
@@ -1360,101 +1410,102 @@ jobs:
                     } catch (e: Exception) {}
                     abandonFocus()
                 }
-            }
-          MF_SRC: |
-            <?xml version="1.0" encoding="utf-8"?>
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                <uses-permission android:name="android.permission.RECORD_AUDIO" />
-                <uses-permission android:name="android.permission.INTERNET" />
-                <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-                <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-                <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-                <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
-                <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-                <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
-                    android:usesPermissionFlags="neverForLocation" />
-                <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-                <application
-                    android:allowBackup="true"
-                    android:icon="@mipmap/ic_launcher"
-                    android:label="Интерком">
-                    <activity
-                        android:name=".MainActivity"
-                        android:exported="true">
-                        <intent-filter>
-                            <action android:name="android.intent.action.MAIN" />
-                            <category android:name="android.intent.category.LAUNCHER" />
-                        </intent-filter>
-                    </activity>
-                </application>
-            </manifest>
-          ICON_GZ: |
-            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
+              MF_SRC: |
+
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+                    <uses-permission android:name="android.permission.INTERNET" />
+                    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+                    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+                    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+                    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+                    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+                    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+                        android:usesPermissionFlags="neverForLocation" />
+                    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+                    <application
+                        android:allowBackup="true"
+                        android:icon="@mipmap/ic_launcher"
+                        android:label="Интерком">
+                        <activity
+                            android:name=".MainActivity"
+                            android:exported="true">
+                            <intent-filter>
+                                <action android:name="android.intent.action.MAIN" />
+                                <category android:name="android.intent.category.LAUNCHER" />
+                            </intent-filter>
+                        </activity>
+                    </application>
+                </manifest>
+          ICON_B64: |
+            iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAC+UlEQVR42u3aXW7iQBCF0XSLPRCFZcIyYJlBsAryHgkigm2qfc95nT/Gqa+rPZmPDwAAAAAAYK3aKB/0a3+5+XKN5Xz6bAIw8BQOohl6kmNohp7kGJrBJzmEZvBJDqEbfqpZck6awSd5G3TDT/I26Iaf5AiawSf5StQNP8nboBt+kiPohp/kCLpHSbJeqUZYeu664Sc5gm74SY7AOwDeAZz+pG6BbvhJjsAVCFcgpz+pW8AGwAZw+pO6BWwAbAAQgOsPgdcgGwAbAATg+kPgNcgGwAYAAYAA3P/Jeg+wAbABQAAgABAAxNh4BMv7Pm7v/tjucPWABJA19Pd+nhgEEDP4j36tELwDxA3/HL8PNsBQg28b2ACG3zYQAAjA6W8LCMDwi0AAIIDk098WEAAIAAQQev1xDRIACAAEAAIAAYAAQAAgABAACAAEAAIAAYAAQAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEMBq7A7X6D9fACAAEIBrkOuPAEAAtoDTXwAiMPwCAAHYAk7/qjYewXxD+n3cGnwbQAiG3wawDf6xDQy+AFa5DR7FYOgF4GqEdwAQAAgABAACAAGAAEAA8DLfCHvClP+5bW6+2SaAyMH//ZmF4AoEAkg6/df0+QUAAgABvMXoL5FeggUAd/ln0CdOUd8HEIAQcAUCAYAAQAAgABAACAAEAAIAAYAAQAAgABAACAAEAAIAAYAAoFgA59Nn85gY1V/zawNgA4AAQADeA8i5/9sA2AAeAQJwDSLw+mMDYAN4BAjANYjA648NgA0wZ11Q+fS3AbABlqgMKp7+L20AETD68LsC4Qr0juqgwuk/yQYQAaMO/2RXIBEw4vB7B8A7QKUaYel56xU/FCw1Z73yh4O552vWYf3aX26+ZFQ+WPuIHxrDP0QAIqD6/Cw6nK5EVDs4+xr/Uhj+khvANqDaAfn2E1kIvPNmUOpKIgZDHx2AGAy9AARh4AEAAAAAmMoPDG0Ua/TEeq0AAAAASUVORK5CYII=
         run: |
-          mkdir -p app/src/main/java/com/example/intercom app/src/main/res/mipmap-xxxhdpi
+          mkdir -p app/src/main/java/com/example/intercom
           printf '%s\n' "$KT_SRC" > app/src/main/java/com/example/intercom/MainActivity.kt
           printf '%s\n' "$MF_SRC" > app/src/main/AndroidManifest.xml
-          echo "$ICON_GZ" | tr -d ' \n' | base64 -d | gunzip > app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || { echo "::error::ICON_GZ corrupted"; exit 1; }
-          grep -q "package com.example.intercom" app/src/main/java/com/example/intercom/MainActivity.kt || { echo "::error::KT_SRC corrupted"; exit 1; }
-          grep -q "newProxyInstance" app/src/main/java/com/example/intercom/MainActivity.kt || { echo "::error::P2P module missing"; exit 1; }
-          grep -q "WifiP2pManager" app/src/main/java/com/example/intercom/MainActivity.kt && echo "::warning::P2P token present" || true
-          grep -q "</manifest>" app/src/main/AndroidManifest.xml || { echo "::error::MF_SRC corrupted"; exit 1; }
-          grep -q "ic_launcher" app/src/main/AndroidManifest.xml || { echo "::error::MF_SRC missing icon"; exit 1; }
-          echo "::notice::Kotlin lines: $(wc -l < app/src/main/java/com/example/intercom/MainActivity.kt)"
-          echo "::notice::Kotlin bytes: $(wc -c < app/src/main/java/com/example/intercom/MainActivity.kt)"
-          echo "::notice::Import lines: $(grep -c '^import ' app/src/main/java/com/example/intercom/MainActivity.kt)"
-          echo "::notice::Icon bytes: $(wc -c < app/src/main/res/mipmap-xxxhdpi/ic_launcher.png)"
+          mkdir -p app/src/main/res/mipmap
+          printf '%s' "$ICON_B64" | base64 -d > app/src/main/res/mipmap/ic_launcher.png
 
-      - name: Fix encoding
+      - name: Create project files
         run: |
-          for F in app/src/main/java/com/example/intercom/MainActivity.kt app/src/main/AndroidManifest.xml; do
-            if ! iconv -f UTF-8 -t UTF-8 "$F" >/dev/null 2>&1; then
-              iconv -f CP1251 -t UTF-8 "$F" > "$F.tmp" && mv "$F.tmp" "$F"
-            fi
-            sed -i 's/\r$//' "$F"
-          done
-
-      - name: Setup Java 17
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          gradle-version: "8.14.3"
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "Intercom"
+          include ':app'
+          EOF
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+              id 'org.jetbrains.kotlin.android' version '1.9.24' apply false
+          }
+          EOF
+          mkdir -p app
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+              id 'org.jetbrains.kotlin.android'
+          }
+          android {
+              namespace 'com.example.intercom'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'com.example.intercom'
+                  minSdk 26
+                  targetSdk 34
+                  versionCode 1
+                  versionName '1.0'
+              }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+              kotlinOptions {
+                  jvmTarget = '17'
+              }
+          }
+          EOF
 
       - name: Build APK
-        run: |
-          set +e
-          gradle assembleDebug --no-daemon > build_log.txt 2>&1
-          code=$?
-          if [ $code -ne 0 ]; then
-            tail -40 build_log.txt | while IFS= read -r line; do
-              echo "::error::${line:0:200}"
-            done
-          fi
-          exit $code
+        run: gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
