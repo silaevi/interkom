@@ -11,8 +11,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Show manifest
-        run: head -c 600 app/src/main/AndroidManifest.xml
+      - name: Write manifest
+        run: |
+          cat > app/src/main/AndroidManifest.xml <<'MANIFEST_EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+              <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+              <application
+                  android:allowBackup="true"
+                  android:label="Intercom">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          MANIFEST_EOF
+          echo "::notice::Manifest written: $(wc -l < app/src/main/AndroidManifest.xml) lines"
+
+      - name: Check sources
+        run: |
+          FILE=app/src/main/java/com/example/intercom/MainActivity.kt
+          echo "::notice::Kotlin file has $(wc -l < $FILE) lines"
+          tail -3 "$FILE" | while IFS= read -r line; do
+            echo "::notice::TAIL: ${line:0:200}"
+          done
 
       - name: Setup Java 17
         uses: actions/setup-java@v6
@@ -31,7 +63,7 @@ jobs:
           gradle assembleDebug --no-daemon > build_log.txt 2>&1
           code=$?
           if [ $code -ne 0 ]; then
-            grep -E "error:|e: |FAILURE|What went wrong|Caused by|Exception|parsing" build_log.txt | head -25 | while IFS= read -r line; do
+            grep -E "error:|e: |FAILURE|What went wrong|Caused by|Exception|parsing|Unresolved" build_log.txt | head -25 | while IFS= read -r line; do
               echo "::error::${line:0:200}"
             done
           fi
