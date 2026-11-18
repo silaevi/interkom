@@ -38,6 +38,7 @@ class MainActivity : Activity() {
         const val KEY_DELAY = "musicDelay"
         const val KEY_THEME = "theme"
         const val KEY_RELAY = "relay"
+        const val KEY_MUSIC_FIRST = "musicFirst"
         const val MAX_HOPS = 3
         const val HEADER = 9
     }
@@ -60,6 +61,8 @@ class MainActivity : Activity() {
     private var voiceThreshold = 1500.0
     private var themeMode = 0
     private var relayEnabled = true
+    private var musicFirst = true
+    private var speechFrames = 0
 
     private val recentPackets = LinkedHashMap<Long, Boolean>()
 
@@ -84,10 +87,11 @@ class MainActivity : Activity() {
     private var delaySpinner: Spinner? = null
     private var themeSpinner: Spinner? = null
     private var relayCheck: CheckBox? = null
+    private var musicFirstCheck: CheckBox? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        title = "Intercom"
+        title = "Интерком"
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
         val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -95,9 +99,10 @@ class MainActivity : Activity() {
             (prefs.getString(KEY_WHITELIST, "") ?: "")
                 .split("\n").filter { it.isNotBlank() })
         voiceThreshold = prefs.getInt(KEY_SENS, 1500).toDouble()
-        musicDelaySec = prefs.getInt(KEY_DELAY, 2)
+        musicDelaySec = prefs.getInt(KEY_DELAY, 2).coerceIn(0, 5)
         themeMode = prefs.getInt(KEY_THEME, 0)
         relayEnabled = prefs.getBoolean(KEY_RELAY, true)
+        musicFirst = prefs.getBoolean(KEY_MUSIC_FIRST, true)
 
         buildUi()
 
@@ -116,7 +121,7 @@ class MainActivity : Activity() {
             grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             startAll()
         } else {
-            setStatus("No microphone permission", false)
+            setStatus("Нет разрешения на микрофон", false)
         }
     }
 
@@ -135,14 +140,14 @@ class MainActivity : Activity() {
             null
         }
         if (socket == null) {
-            setStatus("Port busy. Restart the app", false)
+            setStatus("Порт занят. Перезапустите приложение", false)
             return
         }
 
         thread(name = "recv") { receiveLoop() }
         thread(name = "send") { sendLoop() }
         registerNsd()
-        setStatus("Mic active. Searching for selected devices on Wi-Fi...", true)
+        setStatus("Микрофон активен. Поиск выбранных устройств по Wi-Fi...", true)
     }
 
     @SuppressLint("MissingPermission")
@@ -164,11 +169,11 @@ class MainActivity : Activity() {
                 scoActive = true
             }
         } catch (e: SecurityException) {
-            // Bluetooth permission missing - regular mic is used
+            // Нет разрешения на Bluetooth — используется обычный микрофон
         }
     }
 
-    // ================= NSD: discovery and auto-connect =================
+    // ================= NSD: обнаружение и автоподключение =================
 
     private fun registerNsd() {
         nsdManager = getSystemService(Context.NSD_SERVICE) as NsdManager
@@ -185,7 +190,7 @@ class MainActivity : Activity() {
                     myServiceName = n.serviceName
                 }
                 override fun onRegistrationFailed(n: NsdServiceInfo, e: Int) {
-                    setStatus("Registration failed: $e", false)
+                    setStatus("Ошибка регистрации: $e", false)
                 }
                 override fun onServiceUnregistered(n: NsdServiceInfo) {}
                 override fun onUnregistrationFailed(n: NsdServiceInfo, e: Int) {}
@@ -195,7 +200,7 @@ class MainActivity : Activity() {
             object : NsdManager.DiscoveryListener {
                 override fun onDiscoveryStarted(t: String) {}
                 override fun onStartDiscoveryFailed(t: String, e: Int) {
-                    setStatus("Discovery failed to start: $e", false)
+                    setStatus("Не удалось запустить поиск: $e", false)
                 }
                 override fun onStopDiscoveryFailed(t: String, e: Int) {}
                 override fun onDiscoveryStopped(t: String) {}
@@ -219,7 +224,7 @@ class MainActivity : Activity() {
             override fun onServiceResolved(resolved: NsdServiceInfo) {
                 val host = resolved.host ?: return
                 if (peers.add(host)) {
-                    setStatus("Connected: $name. Just talk, no buttons!", true)
+                    setStatus("Подключено: $name. Просто говорите, кнопки не нужны!", true)
                     runOnUiThread { refreshActiveList() }
                 }
             }
@@ -234,13 +239,13 @@ class MainActivity : Activity() {
                 val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
                 val label = TextView(this).apply {
                     text = name.removePrefix(SERVICE_PREFIX) +
-                            if (whitelist.contains(name)) "  [selected]" else ""
+                            if (whitelist.contains(name)) "  [выбрано]" else ""
                     setTextColor(if (themeMode == 0) Color.BLACK else Color.WHITE)
                     layoutParams = LinearLayout.LayoutParams(
                         0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 }
                 val btn = Button(this).apply {
-                    text = if (whitelist.contains(name)) "Remove" else "Select"
+                    text = if (whitelist.contains(name)) "Убрать" else "Выбрать"
                     setTextColor(Color.WHITE)
                     backgroundTintList = android.content.res.ColorStateList.valueOf(
                         if (themeMode == 0) 0xFF28A745.toInt() else 0xFFFFC107.toInt())
@@ -262,7 +267,7 @@ class MainActivity : Activity() {
     }
 
     private fun refreshActiveList() {
-        devicesView.text = peers.joinToString("\n") { "- $it" }
+        devicesView.text = peers.joinToString("\n") { "• $it" }
     }
 
     private fun saveWhitelist() {
@@ -270,7 +275,7 @@ class MainActivity : Activity() {
             .edit().putString(KEY_WHITELIST, whitelist.joinToString("\n")).apply()
     }
 
-    // ================= Packets =================
+    // ================= Пакеты =================
 
     private fun buildPacket(audio: ByteArray, audioLen: Int, srcId: Int, seqNum: Int, ttl: Int): ByteArray {
         val bb = ByteBuffer.allocate(audioLen + HEADER)
@@ -293,7 +298,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // ================= Audio: receive and relay =================
+    // ================= Аудио: приём и ретрансляция =================
 
     private fun pcmOutFormat(): AudioFormat =
         AudioFormat.Builder().setSampleRate(SAMPLE_RATE)
@@ -311,7 +316,8 @@ class MainActivity : Activity() {
                 SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
             val track = AudioTrack(
                 AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build(),
                 pcmOutFormat(), maxOf(minBuf, SAMPLE_RATE * 2),
                 AudioTrack.MODE_STREAM, 0)
@@ -351,18 +357,18 @@ class MainActivity : Activity() {
             }
             track.stop(); track.release()
         } catch (e: Exception) {
-            setStatus("Audio error: ${e.message}", false)
+            setStatus("Ошибка аудио: ${e.message}", false)
         }
     }
 
-    // ================= Audio: send =================
+    // ================= Аудио: отправка =================
 
     private fun sendLoop() {
         try {
             val minBuf = AudioRecord.getMinBufferSize(
                 SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
             val rec = AudioRecord(
-                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+                MediaRecorder.AudioSource.MIC,
                 SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
@@ -378,72 +384,8 @@ class MainActivity : Activity() {
                 val bytes = ByteArray(n * 2)
                 for (i in 0 until n) {
                     bytes[2 * i] = (buf[i].toInt() and 0xFF).toByte()
-                    bytes[2 * i + 1] = (buf[i].toInt() shr 8 and 0xFF).toByte()
-                }
-
-                if (micEnabled && peers.isNotEmpty()) {
-                    var sum = 0.0
-                    for (i in 0 until n) sum += buf[i].toDouble() * buf[i]
-                    handleVoiceActivity(Math.sqrt(sum / n))
-
-                    seq++
-                    val out = buildPacket(bytes, bytes.size, myId, seq, MAX_HOPS)
-                    for (p in peers) {
-                        try {
-                            socket?.send(DatagramPacket(out, out.size, p, AUDIO_PORT))
-                        } catch (e: Exception) {}
-                    }
-                } else if (!micEnabled && focusHeld) {
-                    abandonFocus()
-                }
-            }
-            rec.stop(); rec.release()
-        } catch (e: Exception) {
-            setStatus("Mic error: ${e.message}", false)
-        }
-    }
-
-    // ================= Music pause =================
-
-    private fun handleVoiceActivity(rms: Double) {
-        val now = System.currentTimeMillis()
-        if (rms > voiceThreshold) {
-            if (!focusHeld) requestFocus()
-            lastSpeechTime = now
-        }
-        if (focusHeld && now - lastSpeechTime > musicDelaySec * 1000L) {
-            abandonFocus()
-        }
-    }
-
-    private fun requestFocus() {
-        val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
-            .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
-            .build()
-        focusRequest = req
-        focusHeld = audioManager.requestAudioFocus(req) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-        if (focusHeld) setStatus("Music paused (talking)", true)
-    }
-
-    private fun abandonFocus() {
-        focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
-        focusHeld = false
-    }
-
-    // ================= UI =================
-
-    private fun applyBackground(view: View) {
-        view.setBackgroundColor(if (themeMode == 0) 0xFFF8F9FA.toInt() else 0xFF1E1E1E.toInt())
-        if (view is TextView) {
-            view.setTextColor(if (themeMode == 0) Color.BLACK else Color.WHITE)
-        }
-        if (view is ViewGroup) {
-            for (i in 0 until view.childCount) applyBackground(view.getChildAt(i))
-        }
-    }
+                    
+    // ================= Интерфейс =================
 
     private fun buildUi() {
         val d = resources.displayMetrics.density
@@ -451,7 +393,7 @@ class MainActivity : Activity() {
 
         statusView = TextView(this)
         devicesView = TextView(this)
-        micButton = Button(this).apply { text = "Mic: ON" }
+        micButton = Button(this).apply { text = "Микрофон: ВКЛ" }
         foundListLayout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
 
         voiceVolumeBar = SeekBar(this).apply {
@@ -469,18 +411,19 @@ class MainActivity : Activity() {
 
         micButton.setOnClickListener {
             micEnabled = !micEnabled
-            micButton.text = if (micEnabled) "Mic: ON" else "Mic: OFF"
+            micButton.text = if (micEnabled) "Микрофон: ВКЛ" else "Микрофон: ВЫКЛ"
             if (!micEnabled && focusHeld) abandonFocus()
         }
 
-        val testButton = Button(this).apply { text = "Echo test (3 sec)" }
+        val testButton = Button(this).apply { text = "Проверка связи (эхо 3 сек)" }
         testButton.setOnClickListener {
             if (!running) return@setOnClickListener
             val minBuf = AudioTrack.getMinBufferSize(
                 SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
             val track = AudioTrack(
                 AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION).build(),
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build(),
                 pcmOutFormat(), maxOf(minBuf, SAMPLE_RATE * 2), AudioTrack.MODE_STREAM, 0)
             echoTrack = track
             thread {
@@ -489,10 +432,10 @@ class MainActivity : Activity() {
                 track.stop(); track.release()
                 echoTrack = null
             }
-            Toast.makeText(this, "Talk now - you will hear yourself for 3 sec", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Говорите — услышите себя 3 секунды", Toast.LENGTH_SHORT).show()
         }
 
-        val settingsButton = Button(this).apply { text = "Settings" }
+        val settingsButton = Button(this).apply { text = "Настройки" }
         settingsButton.setOnClickListener {
             mainScreen.visibility = View.GONE
             settingsScreen.visibility = View.VISIBLE
@@ -502,11 +445,11 @@ class MainActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(pad, pad, pad, pad)
             addView(TextView(this@MainActivity).apply {
-                text = "Talk without buttons. Selected devices form one network."
+                text = "Говорите без кнопок. Все выбранные устройства образуют единую сеть."
                 textSize = 16f
             })
             addView(TextView(this@MainActivity).apply {
-                text = "Talk volume:"
+                text = "Громкость разговора:"
                 setPadding(0, pad, 0, 0)
             })
             addView(voiceVolumeBar)
@@ -515,22 +458,35 @@ class MainActivity : Activity() {
             addView(settingsButton)
             addView(statusView)
             addView(TextView(this@MainActivity).apply {
-                text = "Found devices (press Select to auto-connect):"
+                text = "Найденные устройства (нажмите «Выбрать» для автоподключения):"
                 setPadding(0, pad, 0, pad / 2)
             })
             addView(foundListLayout)
             addView(TextView(this@MainActivity).apply {
-                text = "Active connections:"
+                text = "Активные соединения:"
                 setPadding(0, pad, 0, pad / 2)
             })
             addView(devicesView)
         }
 
+        // ---------- ЭКРАН НАСТРОЕК ----------
+
+        musicFirstCheck = CheckBox(this).apply {
+            text = "Музыка всегда на первом месте (не приглушать и не ставить на паузу)"
+            isChecked = musicFirst
+            setOnCheckedChangeListener { _, checked ->
+                musicFirst = checked
+                getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    .edit().putBoolean(KEY_MUSIC_FIRST, checked).apply()
+                if (checked) abandonFocus()
+            }
+        }
+
         delaySpinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity,
                 android.R.layout.simple_spinner_dropdown_item,
-                arrayOf("Music pause: 0 sec", "Music pause: 1 sec", "Music pause: 2 sec",
-                        "Music pause: 3 sec", "Music pause: 4 sec", "Music pause: 5 sec"))
+                arrayOf("Пауза музыки: 0 сек", "Пауза музыки: 1 сек", "Пауза музыки: 2 сек",
+                        "Пауза музыки: 3 сек", "Пауза музыки: 4 сек", "Пауза музыки: 5 сек"))
             setSelection(musicDelaySec)
         }
         delaySpinner!!.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -547,13 +503,13 @@ class MainActivity : Activity() {
             progress = ((voiceThreshold - 500) / 45).toInt().coerceIn(0, 100)
         }
         sensLabel = TextView(this).apply {
-            text = "Mic sensitivity: ${sensBar!!.progress}%"
+            text = "Чувствительность микрофона: ${sensBar!!.progress}%"
         }
         sensBar!!.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(s: SeekBar?, prog: Int, fromUser: Boolean) {
                 if (fromUser) {
                     voiceThreshold = 500.0 + prog * 45.0
-                    sensLabel?.text = "Mic sensitivity: $prog%"
+                    sensLabel?.text = "Чувствительность микрофона: $prog%"
                     getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                         .edit().putInt(KEY_SENS, voiceThreshold.toInt()).apply()
                 }
@@ -563,7 +519,7 @@ class MainActivity : Activity() {
         })
 
         relayCheck = CheckBox(this).apply {
-            text = "Sound relay (one network): audio goes through intermediate devices"
+            text = "Ретрансляция звука: звук передаётся и через промежуточные устройства"
             isChecked = relayEnabled
             setOnCheckedChangeListener { _, checked ->
                 relayEnabled = checked
@@ -575,7 +531,7 @@ class MainActivity : Activity() {
         themeSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity,
                 android.R.layout.simple_spinner_dropdown_item,
-                arrayOf("Theme: light", "Theme: dark"))
+                arrayOf("Оформление: светлое", "Оформление: тёмное"))
             setSelection(themeMode)
         }
         themeSpinner!!.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -590,7 +546,7 @@ class MainActivity : Activity() {
             override fun onNothingSelected(p: AdapterView<*>?) {}
         }
 
-        val backButton = Button(this).apply { text = "Back" }
+        val backButton = Button(this).apply { text = "Назад" }
         backButton.setOnClickListener {
             settingsScreen.visibility = View.GONE
             mainScreen.visibility = View.VISIBLE
@@ -601,16 +557,17 @@ class MainActivity : Activity() {
             setPadding(pad, pad, pad, pad)
             visibility = View.GONE
             addView(TextView(this@MainActivity).apply {
-                text = "Settings"
+                text = "Настройки"
                 textSize = 20f
             })
+            addView(musicFirstCheck)
             addView(TextView(this@MainActivity).apply {
-                text = "Music pause delay (seconds of silence before music resumes):"
+                text = "Пауза музыки при разговоре (работает, только если снята галочка выше):"
                 setPadding(0, pad, 0, 0)
             })
             addView(delaySpinner)
             addView(TextView(this@MainActivity).apply {
-                text = "Mic sensitivity (left - reacts to quiet speech, right - only loud voice):"
+                text = "Чувствительность микрофона (влево — реагирует на тихую речь, вправо — только на громкий голос):"
                 setPadding(0, pad, 0, 0)
             })
             addView(sensLabel)
@@ -618,7 +575,7 @@ class MainActivity : Activity() {
             addView(relayCheck)
             addView(themeSpinner)
             addView(TextView(this@MainActivity).apply {
-                text = "All settings are saved automatically."
+                text = "Все настройки сохраняются автоматически."
                 setPadding(0, pad, 0, 0)
             })
             addView(backButton)
@@ -635,7 +592,7 @@ class MainActivity : Activity() {
 
     private fun setStatus(text: String, ok: Boolean) {
         runOnUiThread {
-            statusView.text = "Status: $text"
+            statusView.text = "Статус: $text"
             statusView.setTextColor(if (ok) 0xFF28A745.toInt() else 0xFFDC3545.toInt())
         }
     }
@@ -663,3 +620,4 @@ class MainActivity : Activity() {
         abandonFocus()
     }
 }
+
