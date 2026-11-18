@@ -99,7 +99,7 @@ class MainActivity : Activity() {
             (prefs.getString(KEY_WHITELIST, "") ?: "")
                 .split("\n").filter { it.isNotBlank() })
         voiceThreshold = prefs.getInt(KEY_SENS, 1500).toDouble()
-        musicDelaySec = prefs.getInt(KEY_DELAY, 2)
+        musicDelaySec = prefs.getInt(KEY_DELAY, 2).coerceIn(0, 5)
         themeMode = prefs.getInt(KEY_THEME, 0)
         relayEnabled = prefs.getBoolean(KEY_RELAY, true)
         musicFirst = prefs.getBoolean(KEY_MUSIC_FIRST, true)
@@ -550,6 +550,17 @@ class MainActivity : Activity() {
 
         // ---------- ЭКРАН НАСТРОЕК ----------
 
+        musicFirstCheck = CheckBox(this).apply {
+            text = "Музыка всегда на первом месте (не приглушать и не ставить на паузу)"
+            isChecked = musicFirst
+            setOnCheckedChangeListener { _, checked ->
+                musicFirst = checked
+                getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    .edit().putBoolean(KEY_MUSIC_FIRST, checked).apply()
+                if (checked) abandonFocus()
+            }
+        }
+
         delaySpinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity,
                 android.R.layout.simple_spinner_dropdown_item,
@@ -585,17 +596,6 @@ class MainActivity : Activity() {
             override fun onStartTrackingTouch(s: SeekBar?) {}
             override fun onStopTrackingTouch(s: SeekBar?) {}
         })
-
-        musicFirstCheck = CheckBox(this).apply {
-            text = "Музыка всегда на первом месте (не приглушать и не ставить на паузу)"
-            isChecked = musicFirst
-            setOnCheckedChangeListener { _, checked ->
-                musicFirst = checked
-                getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                    .edit().putBoolean(KEY_MUSIC_FIRST, checked).apply()
-                if (checked) abandonFocus()
-            }
-        }
 
         relayCheck = CheckBox(this).apply {
             text = "Ретрансляция звука: звук передаётся и через промежуточные устройства"
